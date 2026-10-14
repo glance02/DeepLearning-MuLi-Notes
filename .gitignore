@@ -1,0 +1,8 @@
+# Obsidian device-specific state
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache/
+.obsidian/plugins/*/cursor-positions.json
+
+# Plugin state can contain local settings or credentials
+.obsidian/plugins/*/data.json
