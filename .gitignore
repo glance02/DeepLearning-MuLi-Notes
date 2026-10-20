@@ -6,3 +6,5 @@
 
 # Plugin state can contain local settings or credentials
 .obsidian/plugins/*/data.json
+
+.keep-the-rhythm/
