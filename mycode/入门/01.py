@@ -20,3 +20,6 @@ result = calculate(a, 20)
 ans = subtraction(result, a)
 
 print(ans)
+
+a = 10
+print(a)
