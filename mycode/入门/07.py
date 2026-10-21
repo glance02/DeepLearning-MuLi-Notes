@@ -47,3 +47,4 @@ X
 A = X.numpy()
 B = torch.Tensor(A)
 type(A), type(B)
+
