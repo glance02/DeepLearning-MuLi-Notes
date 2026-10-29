@@ -3,6 +3,12 @@
 import numpy as np
 
 
+def sigmoid(x):
+    """逐元素计算 sigmoid 激活函数。"""
+    x = np.asarray(x)
+    return 1 / (1 + np.exp(-x))
+
+
 def softmax(x):
     """将分数转换成概率；二维输入的每一行对应一个样本。"""
     x = np.asarray(x)
