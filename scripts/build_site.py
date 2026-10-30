@@ -170,7 +170,7 @@ def build_site(root: Path, output: Path, revision: str = "local") -> dict:
         destination.write_text(content, encoding="utf-8")
     copy_asset("assets/vendor/mathjax/LICENSE")
     report = validate_site(output)
-    report.update({"revision": revision, "files": len(list(output.rglob("*.*")))})
+    report.update({"revision": revision, "files": sum(p.is_file() for p in output.rglob("*")) + 1})
     (output / "build.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return report
 
