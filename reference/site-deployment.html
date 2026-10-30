@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="用这次真实的网站部署学习 Git、静态网页生成、Nginx、软链接发布和每日更新。">
+  <title>从笔记到网站 · 网站部署实战</title>
+  <link rel="stylesheet" href="../assets/teach.css">
+  <script src="../assets/teach.js" defer></script>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="site-deployment.html"><small>YOUR SITE / FIELD NOTES</small>网站部署 · 实战笔记</a>
+    <p class="side-label">按问题回查</p>
+    <nav class="side-links" aria-label="部署笔记目录">
+      <a href="#map">01 · 先看整条链路</a>
+      <a href="#inspect">02 · 先检查什么</a>
+      <a href="#git">03 · Git 怎样同步</a>
+      <a href="#build">04 · 笔记怎样变网页</a>
+      <a href="#release">05 · 软链接怎样发布</a>
+      <a href="#nginx">06 · 域名怎样找到文件</a>
+      <a href="#timer">07 · 每天怎样自动更新</a>
+      <a href="#debug">08 · 这次怎样排错</a>
+      <a href="#commands">09 · 以后怎样维护</a>
+      <a href="#code">10 · 从哪里读源码</a>
+    </nav>
+    <p class="side-label">学一点，验证一点</p>
+    <nav class="side-links">
+      <a href="../lessons/0006-site-deployment-flow.html">5 分钟 · 追踪一次更新</a>
+      <a href="index.html">深度学习手边册</a>
+    </nav>
+    <p class="side-note">从你自己的项目出发。<br>先理解每一步负责什么，再读具体代码。</p>
+    <button class="secondary print-button" data-print type="button">打印这份笔记</button>
+  </aside>
+  <main class="main reading">
+    <header class="hero">
+      <p class="eyebrow">A WEBSITE YOU CAN EXPLAIN</p>
+      <h1>从本地笔记，<br>到自己的学习网站。</h1>
+      <p class="lead">这份笔记解释 2026 年 10 月 30 日实际完成的部署。沿着你熟悉的文件，理解每一步做了什么、为什么这样做，以及出问题时从哪里找证据。</p>
+      <div class="meta"><span>Git · Python · Linux · Nginx · systemd</span><span>分段阅读，每次约 3—5 分钟</span><span>可离线阅读 · 可打印</span></div>
+    </header>
+    <div class="goal"><strong>先获得一个具体能力</strong>当网页没有显示最新笔记时，能指出更新链路可能停在哪一步，并选出下一条检查命令。</div>
+    <p class="buttons"><a href="../lessons/0006-site-deployment-flow.html">先做第一个短练习 →</a><a href="#commands">直接查维护命令</a></p>
+
+    <section id="map">
+      <h2>01 / 一次更新，经过哪些地方？</h2>
+      <p>你已经有一组 HTML、CSS 和 JavaScript 文件。练习里的计算在浏览器中进行；服务器提供这些文件。Markdown 笔记则先经过 Python 脚本，生成浏览器可以阅读的 HTML。</p>
+      <div class="flow" aria-label="内容发布流程"><span>本地修改</span><b>→</b><span>commit、push</span><b>→</b><span>GitHub main</span><b>→</b><span>服务器 pull</span></div>
+      <div class="flow" aria-label="网站生成流程"><span>生成 HTML</span><b>→</b><span>检查链接</span><b>→</b><span>切换 current</span><b>→</b><span>浏览器刷新</span></div>
+      <div class="table-wrap"><table><thead><tr><th>名词</th><th>这次指什么</th><th>负责什么</th></tr></thead><tbody>
+        <tr><td>源文件</td><td>仓库里的笔记、页面和脚本</td><td>供你编辑，保存内容与生成规则</td></tr>
+        <tr><td>构建</td><td>运行 <code>build_site.py</code></td><td>选取内容、生成网页、改写链接、检查输出</td></tr>
+        <tr><td>发布版本</td><td><code>releases/</code> 下的一份完整输出</td><td>保存某次构建的网页和附件</td></tr>
+        <tr><td>软链接</td><td>记录目标路径的文件系统入口</td><td>让固定路径指向一个发布版本</td></tr>
+        <tr><td>Nginx</td><td>服务器现有的 Web 服务</td><td>接收 HTTPS 请求，读取对应的站点文件</td></tr>
+        <tr><td>定时任务</td><td>systemd timer 触发 service</td><td>每天启动一次更新程序</td></tr>
+      </tbody></table></div>
+      <p>先记住各自的职责。<strong>软链接不会去 GitHub 拉代码；定时任务负责启动更新，Git 负责获取提交。</strong></p>
+    </section>
+
+    <section id="inspect">
+      <h2>02 / 动手前，先把环境看清楚</h2>
+      <p>这次先读本地页面和引用关系，确认要带哪些资源。随后通过 ssh-manager，一次执行一条用途明确的检查命令，用事实决定接入方式。</p>
+      <div class="table-wrap"><table><thead><tr><th>检查</th><th>实际发现</th><th>决定</th></tr></thead><tbody>
+        <tr><td>页面和脚本</td><td>现有练习使用浏览器 JavaScript</td><td>按静态文件发布</td></tr>
+        <tr><td>域名解析</td><td><code>glance02.xyz</code> 指向 myserver</td><td>直接接入该服务器</td></tr>
+        <tr><td>监听端口与站点配置</td><td>Nginx 已接收 80、443，域名已有证书</td><td>沿用现有 HTTPS，加入路径规则</td></tr>
+        <tr><td>站点目录</td><td>现有根目录是 <code>/var/www/myhtml</code>，目标路径空闲</td><td>在其下建立 <code>deep-learning</code> 入口</td></tr>
+        <tr><td>仓库可达性</td><td>直连 GitHub 超时，现有本机代理可以访问</td><td>为这个仓库和更新任务设置代理</td></tr>
+      </tbody></table></div>
+      <p>例如 <code>ss -ltnp</code> 观察监听端口；读取 Nginx 配置找网站根目录；<code>git ls-remote</code> 检查能否读到远程分支。这些动作收集证据，尚不发布内容。</p>
+      <p class="source">项目依据：<a href="../deploy/README.md">实际部署说明</a> · 原理：<a href="https://nginx.org/en/docs/beginners_guide.html">Nginx 官方入门指南</a></p>
+    </section>
+
+    <section id="git">
+      <h2>03 / 保存、提交、推送、拉取</h2>
+      <p>这四个动作发生在不同位置。保存让文件写入本地磁盘；commit 把选定修改记为本地版本；push 把提交发送到 GitHub；服务器 pull 才更新服务器的工作区。</p>
+      <pre><code>你的电脑                  GitHub                  服务器
+修改 → 保存 → commit  ──push──→ main ──pull──→ repo/
+                                                ↓
+                                            下一步：构建</code></pre>
+      <p>因此，只在 VS Code 保存文件，服务器明天仍读不到这份新修改。即使已经 push，网站也要等下一次更新任务完成，或由你手动触发。</p>
+      <p>更新程序使用 <code>git pull --ff-only origin main</code>。它只允许快进更新；分支历史发生分叉时会失败。脚本还会先检查工作区是否有本地修改，避免直接覆盖服务器上的改动。</p>
+      <p class="source">命令原理：<a href="https://git-scm.com/docs/git-pull">Git 官方：git pull 与 --ff-only</a> · 实现：<a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/scripts/update_site.py">update_site.py 的 update()</a></p>
+    </section>
+
+    <section id="build">
+      <h2>04 / 源文件怎样变成可访问的网站？</h2>
+      <p><code>build_site.py</code> 读取手边册、练习和斋藤笔记。现有 HTML 保留结构，Markdown 经过转换，再加上统一的页面外壳、章节导航和样式。</p>
+      <ol>
+        <li><strong>选内容：</strong>选定的页面和笔记进入网站；发布页面引用的 PDF、代码、Notebook 和图片也按规则带上。</li>
+        <li><strong>生成 HTML：</strong>Python-Markdown 处理表格和代码块；Arithmatex 保留数学表达，再由浏览器中的 MathJax 显示公式。</li>
+        <li><strong>整理链接：</strong>已发布笔记的 <code>.md</code> 链接变成 <code>.html</code>；范围外内容转到 GitHub。</li>
+        <li><strong>检查输出：</strong>确认站内文件和 HTML 锚点存在，生成 <code>build.json</code> 记录提交号与检查结果。</li>
+      </ol>
+      <h3>为什么保留目录层级？</h3>
+      <pre><code>当前网页：/deep-learning/lessons/0001-array-shapes.html
+样式链接：../assets/teach.css
+解析结果：/deep-learning/assets/teach.css</code></pre>
+      <p>页面里的 <code>../</code> 表示回到上一层。保持 <code>lessons</code>、<code>assets</code>、<code>reference</code> 的相对位置，原有引用就能继续使用。PDF 后的 <code>#page=39</code> 也会保留，交给阅读器定位。</p>
+      <h3>venv 又是什么？</h3>
+      <p>构建用的 Python 包装在独立虚拟环境中。服务器通过 <code>/srv/deep-learning/venv/bin/python</code> 明确选择这个环境，固定版本记录在 <code>deploy/requirements.txt</code>。虚拟环境可以重新创建，笔记和脚本保存在仓库里。</p>
+      <p class="source"><a href="https://python-markdown.github.io/extensions/">Python-Markdown 扩展</a> · <a href="https://facelessuser.github.io/pymdown-extensions/extensions/arithmatex/">Arithmatex 公式转换</a> · <a href="https://docs.python.org/3/library/venv.html">Python 官方 venv</a></p>
+    </section>
+
+    <section id="release">
+      <h2>05 / 软链接让固定入口指向新版本</h2>
+      <pre><code>/srv/deep-learning/
+├── repo/             Git 工作区：保存源文件
+├── venv/             构建所用的 Python 环境
+├── releases/
+│   ├── 版本 A/       上一次生成的完整网站
+│   └── 版本 B/       新生成的完整网站
+├── previous → releases/版本 A/
+└── current  → releases/版本 B/
+
+/var/www/myhtml/deep-learning
+    → /srv/deep-learning/current
+    → /srv/deep-learning/releases/版本 B/</code></pre>
+      <p>访问者使用的路径始终相同。发布程序先在新目录完成构建和校验，再将 <code>current</code> 切向新目录。构建阶段失败时，会清理本次候选目录，保留现有入口。</p>
+      <p><code>atomic_link()</code> 先在同一父目录创建临时软链接，再用 <code>os.replace()</code> 替换入口。这个入口替换是原子的，避免先删除入口、再创建入口之间的空档。它针对入口这一项操作；已经开始读取旧版的请求仍可能使用旧文件。</p>
+      <p>保留的 <code>previous</code> 用于回退。回退后，下次正常更新仍以 GitHub 的 main 为发布目标。</p>
+      <p class="source">实现：<a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/scripts/update_site.py">publish()、atomic_link() 与 --rollback</a> · 原理：<a href="https://docs.python.org/3/library/os.html#os.replace">Python 官方 os.replace</a></p>
+    </section>
+
+    <section id="nginx">
+      <h2>06 / 域名后面的路径怎样找到文件？</h2>
+      <p>浏览器先通过域名找到服务器，再向现有 HTTPS 站点请求路径。这个站点的根目录是 <code>/var/www/myhtml</code>。Nginx 将请求路径映射到根目录下面，Linux 沿软链接找到实际文件。</p>
+      <pre><code>请求： https://glance02.xyz/deep-learning/reference/index.html
+映射： /var/www/myhtml/deep-learning/reference/index.html
+解析： /srv/deep-learning/current/reference/index.html
+读取： 当前发布版本中的 reference/index.html</code></pre>
+      <p>两个入口 <code>/deep-learning</code> 和 <code>/deep-learning/</code> 会返回 302，跳到手边册的实际地址。这样从首页继续访问相对链接时，浏览器知道页面位于哪一层目录。</p>
+      <details><summary>展开看这次的路径配置</summary><pre><code>location = /deep-learning {
+    return 302 /deep-learning/reference/index.html;
+}
+
+location = /deep-learning/ {
+    return 302 /deep-learning/reference/index.html;
+}
+
+location ^~ /deep-learning/ {
+    try_files $uri $uri/ =404;
+    add_header Cache-Control "no-cache";
+}</code></pre><p>这段配置被包含在现有 HTTPS server 块中，继承原来的根目录和证书。<code>no-cache</code> 允许缓存，但要求复用缓存前向服务器重新确认。</p></details>
+      <p>首次接入时备份配置，通过 <code>nginx -t</code> 后才 reload。后续只改网页内容、切换软链接时，通常不需要 reload。</p>
+      <p class="source"><a href="https://nginx.org/en/docs/beginners_guide.html">Nginx 官方：静态内容与 reload</a> · <a href="https://www.rfc-editor.org/rfc/rfc9111.html#section-5.2.2.4">HTTP 标准：no-cache</a> · <a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/deploy/nginx-deep-learning.conf">本项目路径配置</a></p>
+    </section>
+
+    <section id="timer">
+      <h2>07 / timer 决定何时，service 决定做什么</h2>
+      <div class="table-wrap"><table><thead><tr><th>文件</th><th>关键内容</th><th>含义</th></tr></thead><tbody>
+        <tr><td><code>deep-learning-update.timer</code></td><td><code>OnCalendar=*-*-* 04:00:00 Asia/Shanghai</code></td><td>每天北京时间 04:00 触发</td></tr>
+        <tr><td>同一个 timer</td><td><code>Persistent=true</code></td><td>停机错过日程后，恢复时可补跑一次</td></tr>
+        <tr><td><code>deep-learning-update.service</code></td><td><code>Type=oneshot</code></td><td>每次启动执行一次更新程序</td></tr>
+        <tr><td>同一个 service</td><td><code>User=deep-learning</code></td><td>用专用部署用户执行</td></tr>
+      </tbody></table></div>
+      <p>服务启动 <code>update_site.py</code>：先拉取，再比较提交号。当前 <code>build.json</code> 已记录相同提交时直接跳过；有新提交则生成新版并切换入口。更新过程会写入 systemd 日志。</p>
+      <p>Git 仓库的代理设置保存在该仓库配置中；service 中也设置了构建所需的代理环境变量。它们影响更新过程，访问者读已发布网页时无需经过这个 GitHub 代理。</p>
+      <p class="source"><a href="https://www.freedesktop.org/software/systemd/man/latest/systemd.timer.html">systemd 官方：timer 与 Persistent</a> · <a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/deploy/deep-learning-update.service">项目 service</a> · <a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/deploy/deep-learning-update.timer">项目 timer</a></p>
+    </section>
+
+    <section id="debug">
+      <h2>08 / 这次真正遇到的错误</h2>
+      <p>排错的顺序是：写下观察到的现象，找能区分原因的检查，依据结果修改，再验证原来的问题是否消失。</p>
+      <div class="table-wrap"><table><thead><tr><th>现象</th><th>检查得到的证据</th><th>处理</th></tr></thead><tbody>
+        <tr><td>服务器读 GitHub 超时</td><td>使用现有本机代理后，能读到 main 的提交号</td><td>给仓库与更新任务配置该代理</td></tr>
+        <tr><td>服务器创建 venv 失败</td><td>错误提示缺少 ensurepip／venv 支持</td><td>安装 <code>python3.12-venv</code>，再创建环境</td></tr>
+        <tr><td>新站点文件返回 404</td><td><code>namei -l</code> 显示发布目录是 0700；Nginx 日志出现 Permission denied</td><td>发布前设为 0755，并加入 Linux 权限测试</td></tr>
+        <tr><td>构建报告的文件数偏少</td><td>最初按 <code>*.*</code> 统计，漏掉 LICENSE，也未计入即将写出的报告</td><td>遍历所有文件，计入报告自身，并核对数量</td></tr>
+        <tr><td>自动浏览器工具停止</td><td>工具报告无法可靠识别当前 URL；你随后提供了正常网页截图</td><td>停止 UI 自动操作，继续 HTTP 验收，记录验证范围</td></tr>
+      </tbody></table></div>
+      <h3>为什么文件明明存在，还会 404？</h3>
+      <p>Python 的 <code>mkdtemp()</code> 在 Linux 上创建的目录默认只允许创建者访问。这次创建者是部署用户，Nginx worker 使用另一个用户；访问路径时必须能逐层穿过目录。配置中的 <code>try_files</code> 最终返回 404，所以要结合错误日志判断原因。</p>
+      <pre><code>0700 → 所有者 rwx；组 ---；其他人 ---
+0755 → 所有者 rwx；组 r-x；其他人 r-x
+
+目录的 x：允许沿路径查找其中的条目
+文件的 r：允许读取文件内容</code></pre>
+      <p>这次修复的是生成目录的访问权限，并在后续发布时自动设置；文件仍由部署用户管理。可以在 <code>publish()</code> 中找到 <code>candidate.chmod(0o755)</code>。</p>
+      <p class="source"><a href="https://docs.python.org/3/library/tempfile.html#tempfile.mkdtemp">Python 官方 mkdtemp</a> · <a href="https://man7.org/linux/man-pages/man7/path_resolution.7.html">Linux 官方手册：路径查找权限</a></p>
+      <h3>怎样证明部署已经可用？</h3>
+      <p>首次上线检查了 11 个网页、397 处站内引用与 29 个文件的 HTTP 响应，验证两个入口跳转和 PDF 分段读取；Linux 的 5 项测试通过。还比较了原首页与 <code>/tboi/</code> 的内容校验值。这里记录的是首次上线结果，新增页面后数字会增加。</p>
+      <p>构建检查能发现缺文件和锚点；Linux 测试能验证软链接切换与权限；HTTP 检查能发现 Nginx 读取问题；浏览器和你的截图能核对实际显示。一次检查只回答它覆盖的问题。</p>
+    </section>
+
+    <section id="commands">
+      <h2>09 / 以后维护，先认识这四条命令</h2>
+      <p>以下命令在服务器执行。先读说明，理解每条命令会改变什么；平时更新笔记只需在本地 commit、push，等待每日任务。</p>
+      <div class="table-wrap"><table><thead><tr><th>想知道什么</th><th>命令</th><th>行为</th></tr></thead><tbody>
+        <tr><td>下次何时更新？</td><td><code>systemctl list-timers deep-learning-update.timer</code></td><td>只读查询</td></tr>
+        <tr><td>上次哪里失败？</td><td><code>journalctl -u deep-learning-update.service -n 60 --no-pager</code></td><td>只读查询</td></tr>
+        <tr><td>现在指向哪个版本？</td><td><code>readlink -f /srv/deep-learning/current</code></td><td>只读查询</td></tr>
+        <tr><td>现在立即更新？</td><td><code>sudo systemctl start deep-learning-update.service</code></td><td>会拉取，必要时构建并发布</td></tr>
+      </tbody></table></div>
+      <p>需要强制重建、回退或重装配置时，查<a href="../deploy/README.md">操作说明 deploy/README.md</a>。这份说明侧重执行步骤，本页侧重解释原理。</p>
+      <details><summary>隔一天，遮住上文回忆一下</summary><p>本地保存后网页为什么没变？定时任务与软链接各负责哪一步？构建失败时，current 应指向哪里？先用自己的话回答，再对照 <a href="../lessons/0006-site-deployment-flow.html">短练习</a>核对。</p></details>
+    </section>
+
+    <section id="code">
+      <h2>10 / 带着问题读源码</h2>
+      <p>不必从头背完脚本。每次只找出一个问题的答案。</p>
+      <div class="table-wrap"><table><thead><tr><th>问题</th><th>先读哪里</th></tr></thead><tbody>
+        <tr><td>哪些内容会被选进网站？</td><td><a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/scripts/build_site.py">build_site.py</a>：<code>build_site()</code>、<code>rewrite_url()</code></td></tr>
+        <tr><td>怎样找断链？</td><td>同文件的 <code>PageInfo</code>、<code>validate_site()</code></td></tr>
+        <tr><td>什么情况下跳过构建？</td><td><a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/scripts/update_site.py">update_site.py</a>：<code>update()</code></td></tr>
+        <tr><td>什么时候切入口、保留旧版？</td><td>同文件的 <code>publish()</code>、<code>atomic_link()</code></td></tr>
+        <tr><td>怎样证明失败时网站还在？</td><td><a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/tests/test_site.py">test_site.py</a>：<code>test_failed_build_preserves_current()</code></td></tr>
+        <tr><td>首次怎样接入已有站点？</td><td><a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/deploy/configure_nginx.py">configure_nginx.py</a>：备份、插入 include、检查、reload</td></tr>
+      </tbody></table></div>
+      <div class="note"><strong>今天先停在这里：</strong>先做 <a href="../lessons/0006-site-deployment-flow.html">“追踪一次更新”</a>，能解释每一步负责什么就够了。看不懂某个函数时，把函数名或这页的小节标题发给 AI，我们再逐行拆。</div>
+    </section>
+    <footer class="footer">根据本项目 2026-10-30 的真实部署与排错整理。实现以仓库当前代码为准；通用原理链接到官方文档。<br>材料已经准备好；理解程度等待你的独立解释与练习反馈。</footer>
+  </main>
+</div>
+</body>
+</html>

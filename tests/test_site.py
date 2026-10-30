@@ -26,7 +26,7 @@ class SiteTests(unittest.TestCase):
     def test_selected_notes_and_links(self):
         output = self.workspace / "site"
         report = build_site(ROOT, output, "test-revision")
-        self.assertEqual(report["pages"], 11)
+        self.assertEqual(report["pages"], 13)
         self.assertEqual(report["files"], sum(p.is_file() for p in output.rglob("*")))
         self.assertFalse((output / "notes/李沐-动手学深度学习").exists())
         self.assertFalse((output / ".git").exists())

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="用三个小问题分清本地保存、Git 推送、服务器构建与网站发布。">
+  <title>追踪一次笔记更新 · 网站部署实战</title>
+  <link rel="stylesheet" href="../assets/teach.css">
+  <script src="../assets/teach.js" defer></script>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a class="brand" href="../reference/site-deployment.html"><small>YOUR SITE / LESSON 06</small>网站部署 · 实战笔记</a>
+    <p class="side-label">先分清每一步</p>
+    <nav class="side-links" aria-label="短练习目录">
+      <a href="#pipeline">看一次更新</a>
+      <a href="#save">01 · 本地保存</a>
+      <a href="#directory">02 · 发布目录</a>
+      <a href="#failure">03 · 构建失败</a>
+      <a href="../reference/site-deployment.html">回到整份部署笔记</a>
+      <a href="../reference/index.html">深度学习手边册</a>
+    </nav>
+    <button class="secondary print-button" data-print type="button">打印当前页</button>
+  </aside>
+  <main class="main reading">
+    <header class="hero"><p class="eyebrow">LESSON 06 / FROM EDIT TO PUBLISH</p><h1>你改的笔记，<br>走到了哪一步？</h1><p class="lead">从自己的网站开始，分清保存、推送、拉取、构建和发布。</p><div class="meta"><span>约 5 分钟</span><a href="../reference/site-deployment.html#map">对应实战笔记</a></div></header>
+    <div class="goal"><strong>这一小步的目标</strong>遇到“网页没更新”时，先指出它可能停在哪一步。</div>
+    <section id="pipeline">
+      <h2>先追踪一个具体例子</h2>
+      <p>你在本地把“第 3 章笔记”增加一段解释。保存之后，这段话还只在电脑里。提交并推送后，GitHub 有了新版本；每日任务启动后，服务器才拉取它。</p>
+      <div class="flow" aria-label="一次内容更新"><span>保存</span><b>→</b><span>commit</span><b>→</b><span>push</span><b>→</b><span>pull</span><b>→</b><span>构建、检查</span><b>→</b><span>切换入口</span></div>
+      <p>构建把 Markdown 转成网页，并验证引用。检查通过，<code>current</code> 软链接才指向新目录；刷新网页后，才有机会读到新内容。</p>
+      <p class="source">先读一手资料：<a href="https://git-scm.com/docs/git-pull">Git 官方 git pull</a> 的 DESCRIPTION 与 --ff-only 两段。只关注“从哪里取更新”，其余选项以后再看。</p>
+    </section>
+    <form class="quiz" id="save" data-answer="a" data-explanation="只保存时，GitHub 还没有这份修改，服务器拉不到它。需要先 commit、push，再等待或手动触发更新。">
+      <fieldset><legend>只在本地保存笔记，没有 commit、push。明天服务器正常拉取后，网页会怎样？</legend>
+        <label><input type="radio" name="save-q" value="a"><span>仍是旧版</span></label>
+        <label><input type="radio" name="save-q" value="b"><span>变成新版</span></label>
+        <label><input type="radio" name="save-q" value="c"><span>无法访问</span></label>
+      </fieldset>
+      <div class="buttons"><button type="submit">核对答案</button><button type="reset" class="secondary">重新作答</button></div><p class="feedback" role="status" aria-live="polite"></p>
+    </form>
+    <section>
+      <h2>源码与网页，分别放在哪里？</h2>
+      <p><code>repo/</code> 放源文件；<code>venv/</code> 放构建用的 Python 环境；<code>releases/</code> 放生成的网站。Nginx 沿着 <code>current</code> 读取某个发布目录中的文件。</p>
+      <pre><code>repo/ 里的 Markdown
+    ↓ build_site.py
+releases/新版/ 里的 HTML
+    ↑ current 指向它
+    ↑ Nginx 读取它</code></pre>
+    </section>
+    <form class="quiz" id="directory" data-answer="b" data-explanation="浏览器读取的是当前发布目录里的网页。Git 拉取更新源码目录；venv 保存构建工具，随后构建与切换入口才完成发布。">
+      <fieldset><legend>在当前方案中，Nginx 沿着 current，最终读取哪一类目录？</legend>
+        <label><input type="radio" name="directory-q" value="a"><span>源码目录</span></label>
+        <label><input type="radio" name="directory-q" value="b"><span>发布目录</span></label>
+        <label><input type="radio" name="directory-q" value="c"><span>环境目录</span></label>
+      </fieldset>
+      <div class="buttons"><button type="submit">核对答案</button><button type="reset" class="secondary">重新作答</button></div><p class="feedback" role="status" aria-live="polite"></p>
+    </form>
+    <form class="quiz" id="failure" data-answer="c" data-explanation="新版构建和检查成功后才切入口。构建失败时保留旧目录，更新日志记录错误，等待修复后再发布。">
+      <fieldset><legend>新版构建时发现资源缺失，程序报错退出。current 应怎样处理？</legend>
+        <label><input type="radio" name="failure-q" value="a"><span>切到新目录</span></label>
+        <label><input type="radio" name="failure-q" value="b"><span>删除旧目录</span></label>
+        <label><input type="radio" name="failure-q" value="c"><span>保留旧目录</span></label>
+      </fieldset>
+      <div class="buttons"><button type="submit">核对答案</button><button type="reset" class="secondary">重新作答</button></div><p class="feedback" role="status" aria-live="polite"></p>
+    </form>
+    <section>
+      <h2>用自己的话，补完一句</h2>
+      <p>“Git 负责把 ______ 带到服务器；构建脚本负责 ______；current 负责指向 ______。”</p>
+      <details><summary>先自己说，再展开核对</summary><p>Git 把提交过的源文件变更带到服务器；构建脚本生成并检查网页；current 指向当前发布版本的目录。可以用自己的表达，只要这三个职责分清楚。</p></details>
+      <p>把你的解释或不确定的题目发给 AI，我们再接着拆。今天不需要运行服务器命令。明天先遮住流程图回忆一次，再看 <a href="../reference/site-deployment.html#release">软链接怎样发布</a>。</p>
+    </section>
+    <nav class="lesson-nav" aria-label="继续阅读"><a href="../reference/site-deployment.html">← 回到实战笔记</a><a href="../reference/site-deployment.html#code">接着找一处源码 →</a></nav>
+    <footer class="footer">网站部署实战 · 2026-10-30<br>页面反馈帮助你自查；是否理解，等你解释和独立作答后再记录。</footer>
+  </main>
+</div>
+</body>
+</html>
