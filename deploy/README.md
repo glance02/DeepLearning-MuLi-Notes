@@ -31,6 +31,7 @@ python -m venv .site-venv
 站点运行在现有 Ubuntu 24.04、Nginx HTTPS 入口上，不增加监听端口。以下操作由管理员逐条执行；首次安装前应确认用户名和目标路径尚未使用。
 
 ```bash
+apt-get install -y python3.12-venv
 useradd --system --user-group --home-dir /srv/deep-learning --shell /usr/sbin/nologin deep-learning
 install -d -o deep-learning -g deep-learning -m 755 /srv/deep-learning
 runuser -u deep-learning -- git -c http.proxy=http://127.0.0.1:7890 clone --depth 1 --single-branch --branch main https://github.com/glance02/DeepLearning-MuLi-Notes.git /srv/deep-learning/repo

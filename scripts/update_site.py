@@ -34,6 +34,8 @@ def publish(base: Path, repository: Path, revision: str, python: str = sys.execu
     current = base / "current"
     try:
         run(python, str(repository / "scripts/build_site.py"), "--output", str(candidate), "--revision", revision)
+        # mkdtemp defaults to 0700; Nginx must be able to traverse the release.
+        candidate.chmod(0o755)
     except BaseException:
         # Only remove the newly created build directory, never the live release.
         if candidate.parent == releases:

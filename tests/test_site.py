@@ -86,6 +86,7 @@ class SiteTests(unittest.TestCase):
         self.assertEqual((base / "current").resolve(), third)
         self.assertEqual((base / "previous").resolve(), second)
         self.assertFalse(first.exists())
+        self.assertEqual(third.stat().st_mode & 0o777, 0o755)
 
 
 if __name__ == "__main__":
