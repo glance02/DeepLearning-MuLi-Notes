@@ -8,3 +8,10 @@
 .obsidian/plugins/*/data.json
 
 .keep-the-rhythm/
+
+# Static website build environment and output
+.site-venv/
+dist/
+.site-tests/
+scripts/__pycache__/
+tests/__pycache__/

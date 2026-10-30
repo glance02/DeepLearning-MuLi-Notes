@@ -1,0 +1,10 @@
+[Unit]
+Description=Refresh the deep learning website daily at 04:00 Beijing time
+
+[Timer]
+OnCalendar=*-*-* 04:00:00 Asia/Shanghai
+Persistent=true
+Unit=deep-learning-update.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,10 @@
+.note-content h1{font-size:clamp(28px,3.4vw,42px)}
+.note-content h2{margin-top:38px;padding-top:12px;border-top:1px solid var(--line)}
+.note-content h3{margin-top:28px}.note-content img{max-width:100%;height:auto}
+.note-content table{display:block;overflow-x:auto;font-size:13px}
+.note-content blockquote{margin:20px 0;padding:8px 20px;border-left:3px solid var(--accent);color:var(--muted)}
+.note-content .arithmatex{overflow-x:auto;overflow-y:hidden}
+.note-content li{margin:5px 0}.note-content .toc{font-size:13px}
+.note-content .toc ul{padding-left:20px}.note-toc{padding:16px 20px;background:var(--soft);margin-bottom:28px}
+.note-toc summary{font-size:13px}.note-content mjx-container{max-width:100%}
+@media print{.note-toc{display:none}.note-content h2{break-after:avoid}}

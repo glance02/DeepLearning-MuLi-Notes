@@ -1,0 +1,17 @@
+[Unit]
+Description=Update the deep learning notes website
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=deep-learning
+Group=deep-learning
+WorkingDirectory=/srv/deep-learning/repo
+Environment=GIT_TERMINAL_PROMPT=0
+Environment=HTTPS_PROXY=http://127.0.0.1:7890
+Environment=HTTP_PROXY=http://127.0.0.1:7890
+Environment=NO_PROXY=localhost,127.0.0.1
+ExecStart=/srv/deep-learning/venv/bin/python /srv/deep-learning/repo/scripts/update_site.py
+TimeoutStartSec=15min
+UMask=0022
