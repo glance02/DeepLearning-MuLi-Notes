@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Affine 反向传播速查</title><link rel="stylesheet" href="../assets/teach.css"><script src="../assets/teach.js" defer></script></head>
+<body><main class="main reading"><header class="hero"><p class="eyebrow">REFERENCE / CH 5</p><h1>Affine 反向传播速查</h1><p class="lead">前向 Y=XW+b。X 为 (N,D)，W 为 (D,H)，b 为 (H,)，输出 Y 与传入梯度 G 都为 (N,H)。</p></header>
+<p>先读符号：<a href="../lessons/0008-affine-backward.html#vector-notation">式（5.15）的 X 与 ∂L/∂X 怎样理解</a>。本书把标量损失对各输入分量的偏导数按原顺序排列成梯度。</p>
+<section id="formulas"><h2>三条公式及其元素含义</h2><div class="table-wrap"><table><thead><tr><th>梯度</th><th>矩阵公式</th><th>元素形式</th><th>为什么求和</th></tr></thead><tbody>
+<tr><td>dX，(N,D)</td><td>G @ W.T</td><td>dX[n,i] = Σⱼ G[n,j] W[i,j]</td><td>同一输入影响多个输出</td></tr>
+<tr><td>dW，(D,H)</td><td>X.T @ G</td><td>dW[i,j] = Σₙ X[n,i] G[n,j]</td><td>所有样本共享权重</td></tr>
+<tr><td>db，(H,)</td><td>G.sum(axis=0)</td><td>db[j] = Σₙ G[n,j]</td><td>所有样本共享偏置</td></tr></tbody></table></div>
+<p>G[n,j]=∂L/∂Y[n,j]，即 dout。dX、dW、db 均是最终标量损失 L 对相应变量的梯度。</p>
+<pre><code>dx = np.dot(dout, self.W.T)
+self.dW = np.dot(self.x.T, dout)
+self.db = np.sum(dout, axis=0)
+return dx</code></pre>
+<p class="note">转置来自把元素级链式法则的求和排列成矩阵乘法；形状检查能辅助核对。若 L 取平均，dout 已包含相应求导因子，本层不额外除以 N。</p>
+<p>前向保存的 self.x 用于求 dW；dW、db 保存后供参数更新使用。上述公式针对二维批输入；单样本可写成 (1,D)，因为一维 NumPy 数组的 .T 不改变形状。</p>
+<p class="source">一手资料：<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/layers.py#L38-L64">教材 Affine 实现</a> · <a href="https://cs231n.github.io/optimization-2/">Stanford 链式法则与向量化梯度讲义</a>。</p></section>
+<nav class="lesson-nav"><a href="../lessons/0008-affine-backward.html">查看逐元素推导与练习</a><a href="mul-layer-backward.html">回顾乘法层</a></nav>
+<footer class="footer">2026-10-31 · 第5章独立补充。</footer></main></body></html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>乘法层怎样把导数传回去 · 深度学习短课</title>
+  <link rel="stylesheet" href="../assets/teach.css">
+  <script src="../assets/teach.js" defer></script>
+</head>
+<body><div class="layout">
+<aside class="sidebar">
+  <a class="brand" href="../reference/index.html"><small>DEEP LEARNING / CH 5</small>深度学习 · 逐小步学</a>
+  <nav class="side-links" aria-label="本课导航">
+    <a href="#meaning">变量的含义</a><a href="#reason">为什么交叉相乘</a><a href="#practice">自己算一次</a>
+    <a href="../reference/mul-layer-backward.html">乘法层速查</a>
+    <a href="0004-numerical-gradient.html">回顾：数值梯度</a>
+  </nav>
+  <button class="secondary print-button" data-print type="button">打印当前页</button>
+</aside>
+<main class="main reading">
+  <header class="hero"><p class="eyebrow">LESSON 07 / BACKPROPAGATION</p>
+    <h1>乘法层怎样把导数传回去</h1>
+    <p class="lead">只解释你正在写的 MulLayer.backward，不展开整张网络。</p>
+    <div class="meta"><span>第5章 · 约3分钟</span><a href="../mycode/chapter5.ipynb">自己的代码</a></div>
+  </header>
+  <div class="goal"><strong>这一小步的目标</strong>能说清 dout 从哪里来，并用保存的 x、y 算出 dx、dy。</div>
+  <section id="meaning"><h2>先把普通数值和导数分开</h2>
+    <p>前向计算 <code>out = x * y</code>，同时把输入保存在 <code>self.x</code> 和 <code>self.y</code>，供反向计算使用。设后面还有计算，最终得到一个标量结果 L；在网络训练中，L 通常就是损失。</p>
+    <div class="flow"><span>x、y</span><b>→</b><span>out = x × y</span><b>→</b><span>后续计算</span><b>→</b><span>L</span></div>
+    <div class="table-wrap"><table><thead><tr><th>代码变量</th><th>数学含义</th><th>从哪里来／传到哪里</th></tr></thead><tbody>
+      <tr><td><code>dout</code></td><td>∂L/∂out</td><td>由后续计算的反向过程传进来</td></tr>
+      <tr><td><code>dx</code></td><td>∂L/∂x</td><td>返回给 x 所在的前面分支</td></tr>
+      <tr><td><code>dy</code></td><td>∂L/∂y</td><td>返回给 y 所在的前面分支</td></tr>
+    </tbody></table></div>
+    <p><code>dout</code> 不是 out 的数值，也不是学习率。小幅改变 out 时，它描述最终 L 的变化有多敏感。</p>
+  </section>
+  <section id="reason"><h2>为什么 dx 要乘 y？</h2>
+    <p>固定 y，x 每增加一点，乘积就增加这“一点”的 y 倍，所以 ∂out/∂x = y。同理，∂out/∂y = x。</p>
+    <p>从 x 影响 out，再由 out 影响 L，两段影响相乘，这就是链式法则：</p>
+    <div class="formula">∂L/∂x = (∂L/∂out) × (∂out/∂x) = dout × y</div>
+    <div class="formula">∂L/∂y = (∂L/∂out) × (∂out/∂y) = dout × x</div>
+    <pre><code>def backward(self, dout):
+    dx = dout * self.y
+    dy = dout * self.x
+    return dx, dy</code></pre>
+    <p class="note">“翻转 x 和 y”是记忆提示：求 x 的导数时乘 y，求 y 的导数时乘 x。这里没有交换或修改 self.x、self.y，也没有更新参数。</p>
+    <p>例如 x=100、y=2，后面再乘税率 1.1：L=(x×y)×1.1。后面传回 dout=1.1，于是 dx=2.2、dy=110。保持数量不变，单价小幅增加 1，含税总价会增加 2.2。</p>
+    <p class="source">对照教材配套的 <a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch05/layer_naive.py">MulLayer 源码</a>与<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch05/buy_apple.py">苹果价格示例</a>。</p>
+  </section>
+  <section id="practice"><h2>遮住公式，自己算一次</h2>
+    <form class="quiz" data-answer="b" data-explanation="dx=2×4=8，dy=2×3=6。传回的都是最终 L 对输入的导数。">
+      <fieldset><legend>已调用 forward(3, 4)，随后 backward(2) 返回什么？</legend>
+        <label><input type="radio" name="mul-q" value="a"><span>dx=06，dy=08</span></label>
+        <label><input type="radio" name="mul-q" value="b"><span>dx=08，dy=06</span></label>
+        <label><input type="radio" name="mul-q" value="c"><span>dx=04，dy=03</span></label>
+      </fieldset>
+      <div class="buttons"><button type="submit">核对答案</button><button type="reset" class="secondary">重新作答</button></div>
+      <p class="feedback" role="status" aria-live="polite"></p>
+    </form>
+    <p>最后再用自己的话解释：为什么 dx 用的是 y？把答案或卡住的地方发给我，我们只继续这一小步。隔一天可先不看公式再算一次。</p>
+  </section>
+  <section><h2>回到教材</h2>
+    <p>首选阅读<a href="../materials/深度学习入门：基于Python的理论与实现 (斋藤康毅).pdf#page=160">当前教材位置：PDF 第160页附近的乘法层实现</a>。核对上面的两行代码即可，先不用往后读。</p>
+    <p>本例针对当前标量乘法节点。</p>
+  </section>
+  <nav class="lesson-nav" aria-label="相关材料"><a href="../reference/chapter5.html">← 第五章总结</a><a href="0008-affine-backward.html#affine-513">Affine公式推导 →</a></nav><p><a href="0004-numerical-gradient.html">回顾求导与更新的区别</a> · <a href="../reference/mul-layer-backward.html">乘法层速查</a></p>
+  <footer class="footer">2026-10-31 · 当前问题配套短课。页面练习反馈不会自动写入掌握记录。</footer>
+</main></div></body></html>

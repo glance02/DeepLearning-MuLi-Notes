@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MulLayer.backward 速查</title><link rel="stylesheet" href="../assets/teach.css"><script src="../assets/teach.js" defer></script></head>
+<body><main class="main reading">
+<header class="hero"><p class="eyebrow">REFERENCE / CH 5</p><h1>MulLayer.backward 速查</h1><p class="lead">标量乘法节点：out = x × y；最终标量结果为 L。</p></header>
+<section id="rule"><h2>传入一份导数，返回两份导数</h2>
+<div class="table-wrap"><table><thead><tr><th>变量</th><th>含义</th><th>计算</th></tr></thead><tbody>
+<tr><td>dout</td><td>∂L/∂out</td><td>后续反向过程传入</td></tr>
+<tr><td>dx</td><td>∂L/∂x</td><td>dout × self.y</td></tr>
+<tr><td>dy</td><td>∂L/∂y</td><td>dout × self.x</td></tr></tbody></table></div>
+<pre><code>dx = dout * self.y
+dy = dout * self.x
+return dx, dy</code></pre>
+<p>依据：∂out/∂x=y，∂out/∂y=x，再乘上传入的 dout（链式法则）。self.x、self.y 来自之前一次 forward 保存的输入。</p>
+<p class="note">“翻转”指交叉相乘，没有交换保存的值。返回的是导数；参数更新在后面的训练步骤另做。dout 不总是 1；若最终 L 就是 out，才从 ∂out/∂out=1 开始。</p>
+<p class="source">一手代码：<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch05/layer_naive.py">教材配套 MulLayer</a> · <a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch05/buy_apple.py">苹果价格示例</a></p>
+</section>
+<nav class="lesson-nav"><a href="../lessons/0007-mul-layer-backward.html">解释与小练习</a><a href="index.html">前四章手册</a></nav>
+<footer class="footer">2026-10-31 · 当前第五章问题的独立补充页。</footer>
+</main></body></html>

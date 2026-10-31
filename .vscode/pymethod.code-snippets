@@ -1,0 +1,11 @@
+{
+    "类中的方法": {
+        "scope": "python",
+        "prefix": "pymethod",
+        "body": [
+            "def ${1:method_name}(self, ${2:x}):",
+            "\t${0:pass}"
+        ],
+        "description": "生成带 self 的类方法，按 Tab 依次填写方法名、参数和方法体"
+    }
+}

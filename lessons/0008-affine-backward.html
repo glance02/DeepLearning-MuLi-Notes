@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>从每个元素推导 Affine 反向传播</title>
+<link rel="stylesheet" href="../assets/teach.css">
+<script src="../assets/teach.js" defer></script>
+<script src="../assets/site-math.js" defer></script>
+<script src="../assets/vendor/mathjax/tex-svg-full.js" defer></script>
+</head><body><div class="layout">
+<aside class="sidebar"><a class="brand" href="../reference/affine-backward.html"><small>DEEP LEARNING / CH 5</small>Affine · 从元素到矩阵</a>
+<nav class="side-links" aria-label="本课导航"><a href="#forward">展开前向计算</a><a href="#dx">输入梯度</a><a href="#dw">权重梯度</a><a href="#db">偏置与批量</a><a href="#practice">小练习</a><a href="../reference/affine-backward.html">公式速查</a><a href="0007-mul-layer-backward.html">回顾：乘法层</a></nav>
+<button class="secondary print-button" data-print type="button">打印当前页</button></aside>
+<main class="main reading">
+<header class="hero"><p class="eyebrow">LESSON 08 / AFFINE BACKWARD</p><h1>从每个元素推导<br>Affine 反向传播</h1><p class="lead">先求普通偏导，再把结果排列成矩阵。每次只读一段，随时停下来提问。</p><div class="meta"><span>第5章 · 约5分钟</span><a href="../reference/affine-backward.html">随时回查三条公式</a></div></header>
+<div class="goal"><strong>这一小步的目标</strong>能解释 dX、dW 中的转置，以及 db 为什么对样本求和，把公式对应到 NumPy 代码。</div>
+<section id="vector-notation"><h2>先读懂书中的式（5.15）：对向量求导</h2>
+<p>需要回顾向量求导记号时，先读这一段；也可以直接看<a href="#affine-513">式（5.13）的推导</a>。本节沿用书中大写 X、小写分量 x₀、x₁、…、xₙ 和标量损失 L 的符号。</p>
+<div class="formula arithmatex">\[X=(x_0,x_1,\ldots,x_n)\]</div>
+<p>这一行把多个输入分量合起来记为向量 X。最终损失依赖这些输入，可以写成 L=L(x₀,x₁,…,xₙ)；中间仍然可以经过很多层计算。</p>
+<p>对一个分量 xᵢ 求偏导时，固定其余分量，只考察 xᵢ 的微小变化对 L 的影响。每个分量都这样求一次，再按 X 原来的顺序排列，就定义了本书使用的梯度记法：</p>
+<div class="formula arithmatex">\[\frac{\partial L}{\partial X}=\left(\frac{\partial L}{\partial x_0},\frac{\partial L}{\partial x_1},\ldots,\frac{\partial L}{\partial x_n}\right)\]</div>
+<p>例如 X=(x₀,x₁)，L=x₀²+x₁²，则 ∂L/∂X=(2x₀,2x₁)。在 X=(3,4) 处，梯度为 (6,8)，意思是固定另一个分量时，L 对 x₀、x₁ 的局部变化率分别为6、8。</p>
+<p class="note">∂L/∂X 是“标量 L 对向量 X 的梯度”的整体记号，逐个分量求偏导后组成向量。本书这里把梯度写成行向量，计算时沿用这一排列。</p>
+<p>式（5.15）先定义要收集哪些偏导数；具体怎样求每个偏导数，还要看 L 的计算规则。</p>
+</section>
+<section id="affine-513"><h2>当前问题：沿用书中符号推导式（5.13）</h2>
+<p>这两条公式分别计算输入梯度与权重梯度。本节沿用教材的 X、Y、W、L 符号，逐个元素求导后再写成矩阵。</p>
+<div class="formula arithmatex">\[\frac{\partial L}{\partial X}=\frac{\partial L}{\partial Y}W^{\mathsf T},\qquad \frac{\partial L}{\partial W}=X^{\mathsf T}\frac{\partial L}{\partial Y}\]</div>
+<p>从前向 Y=XW+B 出发，先看单个样本。X 是行向量，设输入有 D 个分量，输出有 H 个分量，Wᵢⱼ 表示第 i 个输入到第 j 个输出的权重。编号从0开始：</p>
+<div class="formula arithmatex">\[y_j=\sum_{i=0}^{D-1}x_iW_{ij}+b_j\]</div>
+<p>第一条：同一输入 xᵢ 影响所有输出 yⱼ，链式法则把各条路径的贡献相加：</p>
+<div class="formula arithmatex">\[\frac{\partial L}{\partial x_i}=\sum_{j=0}^{H-1}\frac{\partial L}{\partial y_j}\frac{\partial y_j}{\partial x_i}=\sum_{j=0}^{H-1}\frac{\partial L}{\partial y_j}W_{ij}=\left[\frac{\partial L}{\partial Y}W^{\mathsf T}\right]_i\]</div>
+<p>乘积使用 Wᵀ，因为矩阵乘法里取其第 i 列，元素 (Wᵀ)ⱼᵢ=Wᵢⱼ，正好与上式的求和一致。</p>
+<p>第二条：单个权重 Wᵢⱼ 只直接出现在 yⱼ 中，本地偏导是 xᵢ：</p>
+<div class="formula arithmatex">\[\frac{\partial L}{\partial W_{ij}}=\frac{\partial L}{\partial y_j}x_i=\left[X^{\mathsf T}\frac{\partial L}{\partial Y}\right]_{ij}\]</div>
+<p>Xᵀ 把各输入排成一列，∂L/∂Y 把各输出的传入导数排成一行，二者相乘的第 i 行、第 j 列就是 xᵢ×∂L/∂yⱼ。因此结果与 W 同形。</p>
+<p class="note">两条式子中，∂L/∂Y 都由后续计算传回；转置后的矩阵乘法把上面的元素级链式法则一次算完。当前先理解单样本，批量版本可稍后再看。</p>
+</section>
+<section id="forward"><h2>补充：先只看一个样本</h2>
+<p>用行向量表示输入，两个输入特征、三个输出。前向为 y=xW+b。W 的第 i 行、第 j 列表示输入 xᵢ 到输出 yⱼ 的权重。</p>
+<div class="formula arithmatex">\[x=[x_1,x_2],\quad W=\begin{bmatrix}w_{11}&w_{12}&w_{13}\\w_{21}&w_{22}&w_{23}\end{bmatrix}\]</div>
+<div class="formula arithmatex">\[\begin{aligned}y_1&=x_1w_{11}+x_2w_{21}+b_1\\y_2&=x_1w_{12}+x_2w_{22}+b_2\\y_3&=x_1w_{13}+x_2w_{23}+b_3\end{aligned}\]</div>
+<p>最终标量损失为 L。后面已经算好并传入 g=[g₁,g₂,g₃]，其中 gⱼ=∂L/∂yⱼ；这就是代码中的 dout。下面所有 d 都表示最终 L 对相应变量的导数。</p>
+<p class="source">链式法则与分支贡献相加：<a href="https://cs231n.github.io/optimization-2/">Stanford CS231n 反向传播讲义</a>。</p>
+</section>
+<section id="dx"><h2>输入梯度：把所有输出路径加起来</h2>
+<p>x₁ 同时影响 y₁、y₂、y₃，因此这三条路径的贡献都要计入：</p>
+<div class="formula arithmatex">\[\frac{\partial L}{\partial x_1}=\sum_{j=1}^{3}\frac{\partial L}{\partial y_j}\frac{\partial y_j}{\partial x_1}=g_1w_{11}+g_2w_{12}+g_3w_{13}\]</div>
+<p>每一项都和你学过的乘法层一样：传入导数乘以另一个乘数。对 x₂ 同理，得到 g₁w₂₁+g₂w₂₂+g₃w₂₃。</p>
+<p>把这两个结果排成行向量，就是下面的矩阵乘法：</p>
+<div class="formula arithmatex">\[dx=[g_1,g_2,g_3]\begin{bmatrix}w_{11}&w_{21}\\w_{12}&w_{22}\\w_{13}&w_{23}\end{bmatrix}=gW^{\mathsf T}\]</div>
+<p>W 转置后，每个输入对应的那一行权重成为一列，便于与所有输出的传入导数相乘、求和。矩阵乘法的定义直接给出了这个排列。</p>
+</section>
+<section id="dw"><h2>权重梯度：每个权重连接一对输入和输出</h2>
+<p>例如 w₁₂ 只直接出现在 y₂ 的式子中，对它求偏导得到 x₁；因此：</p>
+<div class="formula arithmatex">\[\frac{\partial L}{\partial w_{12}}=\frac{\partial L}{\partial y_2}\frac{\partial y_2}{\partial w_{12}}=g_2x_1\]</div>
+<p>其他权重同理。一般元素为 dWᵢⱼ=xᵢgⱼ；按 W 原来的位置排列：</p>
+<div class="formula arithmatex">\[dW=\begin{bmatrix}x_1g_1&x_1g_2&x_1g_3\\x_2g_1&x_2g_2&x_2g_3\end{bmatrix}=\begin{bmatrix}x_1\\x_2\end{bmatrix}[g_1,g_2,g_3]=x^{\mathsf T}g\]</div>
+<p>单个样本的权重梯度是一个列向量乘一个行向量，形成与 W 同形的矩阵。本节的 x 按 (1,2) 的二维行向量理解，转置后是 (2,1)；NumPy 一维数组的 .T 不会把它变成列向量。</p>
+</section>
+<section id="db"><h2>偏置梯度与一批样本</h2>
+<p>单个样本中，bⱼ 只加到 yⱼ 上，局部导数为1，所以 dbⱼ=gⱼ。</p>
+<p>批量时，X 为 (N,D)、W 为 (D,H)、b 为 (H,)，同一个 W 和 b 被所有 N 个样本使用。记 G=dout=∂L/∂Y：</p>
+<div class="formula arithmatex">\[Y_{nj}=\sum_{i=1}^{D}X_{ni}W_{ij}+b_j\]</div>
+<div class="formula arithmatex">\[dX_{ni}=\sum_{j=1}^{H}G_{nj}W_{ij},\qquad dW_{ij}=\sum_{n=1}^{N}X_{ni}G_{nj},\qquad db_j=\sum_{n=1}^{N}G_{nj}\]</div>
+<p>dX 对输出编号 j 求和；共享的 dW、db 则把所有样本编号 n 的贡献相加。批量矩阵乘法正好完成这些求和：</p>
+<pre><code>dx = np.dot(dout, self.W.T)       # (N,H) @ (H,D) → (N,D)
+self.dW = np.dot(self.x.T, dout)  # (D,N) @ (N,H) → (D,H)
+self.db = np.sum(dout, axis=0)    # (N,H) 沿样本维求和 → (H,)</code></pre>
+<p class="note">如果 L 是平均损失，平均因子应通过损失层的求导传到 dout 中；本层直接使用这个 dout，不另行除以 N。</p>
+<p>教材代码把 dW、db 保存在对象中，供后续参数更新读取，并 return dx 给前一层。这里得到的是梯度，更新仍是另一个步骤。</p>
+<p class="source">代码对应：<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/layers.py#L38-L64">教材配套 Affine 类</a>。</p>
+</section>
+<section id="practice"><h2>只检查一个元素</h2>
+<form class="quiz" data-answer="a" data-explanation="w₁₂ 连接 x₁ 与 y₂，所以 dW₁₂=x₁×g₂=2×5=10。它不使用 x₂ 或 g₁。"><fieldset><legend>单个样本 x=[2,3]，传入 g=[4,5,6]。dW₁₂ 是多少？</legend>
+<label><input type="radio" name="affine-q" value="a"><span>10</span></label>
+<label><input type="radio" name="affine-q" value="b"><span>15</span></label>
+<label><input type="radio" name="affine-q" value="c"><span>20</span></label>
+</fieldset><div class="buttons"><button type="submit">核对答案</button><button type="reset" class="secondary">重新作答</button></div><p class="feedback" role="status" aria-live="polite"></p></form>
+<p>有疑问时，把具体卡住的等式发给我；可以只讲其中一行。隔一天先遮住公式，尝试重新写出 w₁₂ 的梯度。</p>
+</section>
+<section><h2>回到教材</h2><p>首先重读<a href="../materials/深度学习入门：基于Python的理论与实现 (斋藤康毅).pdf#page=171">当前 PDF 第171页附近的 Affine 内容</a>，再对照<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/layers.py#L38-L64">教材配套实现</a>的三行梯度计算。想补充链式法则时，参考上面的 Stanford 原始课程讲义。</p></section>
+<nav class="lesson-nav"><a href="0007-mul-layer-backward.html">← 回顾乘法层</a><a href="0009-backprop-review.html">反向流程短练习 →</a></nav><p><a href="../reference/affine-backward.html">Affine公式速查</a> · <a href="../reference/chapter5.html">第五章总结与笔记入口</a></p>
+<footer class="footer">2026-10-31 · 本课推导使用 Y=XW+b 的行向量约定。练习反馈不自动写入学习记录。</footer>
+</main></div></body></html>

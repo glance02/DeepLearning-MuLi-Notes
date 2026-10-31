@@ -26,7 +26,7 @@ class SiteTests(unittest.TestCase):
     def test_selected_notes_and_links(self):
         output = self.workspace / "site"
         report = build_site(ROOT, output, "test-revision")
-        self.assertEqual(report["pages"], 13)
+        self.assertEqual(report["pages"], 20)
         self.assertEqual(report["files"], sum(p.is_file() for p in output.rglob("*")))
         self.assertFalse((output / "notes/李沐-动手学深度学习").exists())
         self.assertFalse((output / ".git").exists())
@@ -42,6 +42,11 @@ class SiteTests(unittest.TestCase):
         self.assertIn("<pre><code", math)
         self.assertTrue((output / "assets/vendor/mathjax/tex-svg-full.js").is_file())
         self.assertTrue((output / "mycode/chapter3.ipynb").is_file())
+        chapter5 = (output / "reference/chapter5.html").read_text(encoding="utf-8")
+        self.assertIn("05-%E8%AF%AF%E5%B7%AE%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%B3%95.html", chapter5)
+        self.assertTrue((output / "assets/chapter5-accuracy.svg").is_file())
+        self.assertTrue((output / NOTES / "05-误差反向传播法.html").is_file())
+        self.assertTrue((output / "lessons/0009-backprop-review.html").is_file())
 
     def test_missing_resource_fails_validation(self):
         output = self.workspace / "broken"
