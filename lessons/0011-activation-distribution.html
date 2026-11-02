@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>追踪5层的输入和输出 · 深度学习短课</title><link rel="stylesheet" href="../assets/teach.css"><script src="../assets/teach.js" defer></script></head>
+<body><div class="layout"><aside class="sidebar"><a class="brand" href="../reference/index.html"><small>DEEP LEARNING / CH 6.2.2</small>深度学习 · 逐小步学</a><nav class="side-links" aria-label="本课导航"><a href="#flow">每层算什么</a><a href="#practice">自己追踪一次</a><a href="../reference/activation-distribution.html">逐行注释速查</a></nav><button class="secondary print-button" data-print type="button">打印当前页</button></aside>
+<main class="main reading"><header class="hero"><p class="eyebrow">LESSON 11 / ACTIVATIONS</p><h1>追踪5层的输入和输出</h1><p class="lead">先只搞清：每一层从哪里取输入，又把输出存在哪里。</p><div class="meta"><span>约3分钟</span><a href="../reference/activation-distribution.html#code">完整逐行注释</a></div></header>
+<div class="goal"><strong>这一小步的目标</strong>能解释 x = activations[i-1]，并说出一幅直方图统计了什么。</div>
+<section id="flow"><h2>每一层重复同一套计算</h2><pre><code>if i != 0:
+    x = activations[i - 1]
+w = np.random.randn(node_num, node_num) * 1
+z = np.dot(x, w)
+a = sigmoid(z)
+activations[i] = a</code></pre>
+<p>i=0时，使用最开始生成的1000个随机样本；i=1时，拿第1层输出 activations[0]；后面依次类推。每一层有自己的新随机权重。</p>
+<div class="flow"><span>x：1000×100</span><b>→</b><span>乘 w：100×100</span><b>→</b><span>z：1000×100</span><b>→</b><span>sigmoid → a：1000×100</span></div>
+<p>activations 的键为0到4，值为对应层的整个输出数组。把一个层的1000×100个值展平，得到100000个激活值，再统计它们在0到1之间各个区间的个数。</p>
+<p>这里计算的是随机初始化下的前向传播；没有更新参数。先理解代码，后续再按书改变初始化尺度，观察分布变化。</p>
+<p class="source">对照<a href="../mycode/chapter6.ipynb">自己的代码</a>、<a href="../mycode/common/functions.py">sigmoid定义</a>、<a href="https://numpy.org/doc/stable/reference/generated/numpy.dot.html">矩阵乘法说明</a>和<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html">直方图说明</a>。</p></section>
+<section id="practice"><h2>自己追踪一次</h2><form class="quiz" data-answer="b" data-explanation="i=2对应第3层，上一层的字典键为1，所以输入来自activations[1]。计算完成后才把本轮结果放进activations[2]。"><fieldset><legend>当 i=2 时，执行 x = activations[i-1]，取出的是哪个数组？</legend>
+<label><input type="radio" name="layer-input" value="a"><span>activations[0]</span></label>
+<label><input type="radio" name="layer-input" value="b"><span>activations[1]</span></label>
+<label><input type="radio" name="layer-input" value="c"><span>activations[2]</span></label>
+</fieldset><div class="buttons"><button type="submit">核对答案</button><button class="secondary" type="reset">重新作答</button></div><p class="feedback" role="status" aria-live="polite"></p></form>
+<p>把你不清楚的那一行或你的理解发给我，我们只继续那一小步。隔一天可以先不看代码，画出前两层的输入输出连接。</p></section>
+<section><h2>回到资料</h2><p>原教材位置为6.2.2，书内177—178页：前向计算与绘图是两段。优先对照<a href="https://numpy.org/doc/stable/reference/generated/numpy.dot.html">NumPy官方矩阵乘法说明</a>和<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html">Matplotlib官方直方图说明</a>核对用法。</p></section>
+<nav class="lesson-nav"><a href="../reference/activation-distribution.html">逐行注释与形状速查</a><a href="../reference/index.html">手册入口</a></nav><footer class="footer">2026-11-02 · 页面练习不自动写入掌握记录；Adam公式题继续暂缓。</footer></main></div></body></html>

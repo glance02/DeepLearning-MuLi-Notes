@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>手敲 Adam 的一次更新 · 深度学习短课</title><link rel="stylesheet" href="../assets/teach.css"><script src="../assets/teach.js" defer></script></head>
+<body><div class="layout"><aside class="sidebar">
+<a class="brand" href="../reference/index.html"><small>DEEP LEARNING / CH 6</small>深度学习 · 逐小步学</a>
+<nav class="side-links" aria-label="本课导航"><a href="#history">两份历史</a><a href="#correction">偏差校正</a><a href="#update">更新一次</a><a href="#practice">自己算一次</a><a href="../reference/adam.html#code">完整代码速查</a></nav>
+<button class="secondary print-button" data-print type="button">打印当前页</button></aside>
+<main class="main reading"><header class="hero"><p class="eyebrow">LESSON 10 / ADAM</p><h1>手敲 Adam 的一次更新</h1><p class="lead">将梯度、历史状态与参数更新连起来；每次只关注一个参数分量。</p><div class="meta"><span>约5分钟</span><a href="../reference/adam.html">公式与代码速查</a></div></header>
+<div class="goal"><strong>这一小步的目标</strong>能把 m、v、偏差校正、参数更新逐项对应到代码，再自行手敲 Adam 类。</div>
+<p>网络仍然先通过反向传播得到 grads。Adam 接收 params 与 grads，更新 W 和 b。下面的 g 是某一个参数的梯度，t 是更新次数；都不是输入图片或监督标签。</p>
+<section id="history"><h2>先保存两份历史</h2>
+<p>m 保留有正负号的梯度历史，帮助确定更新方向；v 保留梯度平方历史，参与缩放各参数分量的步长。默认 β₁=0.9、β₂=0.999。</p>
+<div class="formula">mₜ = 0.9mₜ₋₁ + 0.1gₜ</div><div class="formula">vₜ = 0.999vₜ₋₁ + 0.001gₜ²</div>
+<pre><code>self.m[key] = self.beta1 * self.m[key] + (1 - self.beta1) * g
+self.v[key] = self.beta2 * self.v[key] + (1 - self.beta2) * g ** 2</code></pre>
+<p>赋值右侧使用上一次保存的 m、v，左侧保存本次结果。与 AdaGrad 的一直累加相比，这里的旧统计量会乘保留比例；Adam 的 v 也不表示 Momentum 中的速度。</p>
+<p>第一次更新，若 g=2、m₀=v₀=0，则 m₁=0.2，v₁=0.004。</p>
+<p class="source">依据<a href="https://arxiv.org/pdf/1412.6980#page=2">Adam 原论文第2页 Algorithm 1</a>的两条历史更新公式。</p></section>
+<section id="correction"><h2>修正从零开始的影响</h2>
+<p>第一次只有一个观测，却和初始的零混合，得到的 m、v 偏小。使用已更新次数 t 做校正：</p>
+<div class="formula">m̂ₜ = mₜ / (1−β₁ᵗ)，v̂ₜ = vₜ / (1−β₂ᵗ)</div>
+<pre><code>m_hat = self.m[key] / (1 - self.beta1 ** self.step)
+v_hat = self.v[key] / (1 - self.beta2 ** self.step)</code></pre>
+<p>本例 t=1，m̂₁=0.2/(1−0.9)=2，v̂₁=0.004/(1−0.999)=4。这里的“偏差校正”不是修改网络的偏置 b；m_hat 与 v_hat 不覆盖原始历史状态。</p>
+<p class="source">零初始化的影响与校正见<a href="https://arxiv.org/pdf/1412.6980#page=3">原论文第3节</a>。</p></section>
+<section id="update"><h2>最后才更新参数</h2>
+<div class="formula">参数 ← 参数 − lr × m_hat / (√v_hat + eps)</div>
+<pre><code>params[key] -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)</code></pre>
+<p>本例参数 w=1、lr=0.001，忽略很小的 eps，更新量为0.001×2/√4=0.001，得到 w≈0.999。eps 默认1e-8，用来使分母保持非零。</p>
+<p>手敲时打开<a href="../reference/adam.html#code">完整实现</a>：先写初始化与同形零数组，再写这五条公式，最后接回训练循环。同一个 optimizer 在循环外创建；step 在每次 update 中加一，放在遍历参数的 for 外。</p></section>
+<section id="practice"><h2>遮住上面的例子，算第一步</h2>
+<form class="quiz" data-answer="c" data-explanation="m₁=0.9×0+0.1×4=0.4，v₁=0.999×0+0.001×16=0.016。这里只算原始历史，还没做偏差校正。">
+<fieldset><legend>若第一步 g=4，m₀=v₀=0，β₁=0.9、β₂=0.999，更新历史后是多少？</legend>
+<label><input type="radio" name="adam-history" value="a"><span>m=0.4，v=0.004</span></label>
+<label><input type="radio" name="adam-history" value="b"><span>m=4.0，v=0.016</span></label>
+<label><input type="radio" name="adam-history" value="c"><span>m=0.4，v=0.016</span></label>
+</fieldset><div class="buttons"><button type="submit">核对答案</button><button class="secondary" type="reset">重新作答</button></div><p class="feedback" role="status" aria-live="polite"></p></form>
+<p>把你的计算或手敲时卡住的那一行发给我，我们只继续那一小步。隔一天再遮住代码，试着说出 Adam 保存了哪些历史状态。</p></section>
+<section><h2>回到资料</h2><p>首选对照<a href="https://arxiv.org/pdf/1412.6980#page=2">原论文第2页 Algorithm 1</a>，只读初始化和五条更新公式即可；本次不要求阅读收敛证明。回顾<a href="0009-backprop-review.html">第五章短课</a>，区分反向传播求梯度与优化器更新参数。</p></section>
+<nav class="lesson-nav"><a href="0009-backprop-review.html">← 反向传播复习</a><a href="../reference/adam.html">Adam 完整代码 →</a></nav>
+<footer class="footer">2026-11-02 · 页面自测不会自动写入掌握记录；保留自己手敲的 notebook。</footer></main></div></body></html>

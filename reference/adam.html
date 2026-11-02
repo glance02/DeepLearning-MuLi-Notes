@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adam 公式与 NumPy 实现速查</title><link rel="stylesheet" href="../assets/teach.css"><script src="../assets/teach.js" defer></script></head>
+<body><main class="main reading">
+<header class="hero"><p class="eyebrow">REFERENCE / CH 6</p><h1>Adam：公式与代码对照</h1><p class="lead">手敲用的直接实现：显式计算两份偏差校正后的历史统计量。</p></header>
+<section id="symbols"><h2>符号与变量</h2>
+<div class="table-wrap"><table><thead><tr><th>符号</th><th>代码</th><th>含义</th></tr></thead><tbody>
+<tr><td>θ</td><td>params[key]</td><td>当前参数数组；可以是 W1、b1、W2、b2</td></tr>
+<tr><td>gₜ</td><td>grads[key]</td><td>第 t 次更新时，损失对该参数的梯度</td></tr>
+<tr><td>mₜ</td><td>self.m[key]</td><td>梯度的指数加权平均，保留正负方向</td></tr>
+<tr><td>vₜ</td><td>self.v[key]</td><td>梯度平方的指数加权平均</td></tr>
+<tr><td>t</td><td>self.step</td><td>更新次数；与训练代码中表示标签的 t 无关</td></tr>
+<tr><td>α、β₁、β₂、ε</td><td>lr、beta1、beta2、eps</td><td>学习率、两份历史的保留比例和分母的小常数</td></tr>
+</tbody></table></div><p>m、v 与各自参数同形。数组乘法、平方、平方根和除法均逐元素执行，g² 不是矩阵乘法。Adam 的 v 不是 Momentum 里表示更新速度的 v。</p></section>
+<section id="formulas"><h2>一次更新的公式</h2>
+<p>初始化 m₀=0、v₀=0；每次调用 update 先让 t 增加 1。</p>
+<div class="formula">mₜ = β₁mₜ₋₁ + (1−β₁)gₜ</div>
+<div class="formula">vₜ = β₂vₜ₋₁ + (1−β₂)gₜ²</div>
+<div class="formula">m̂ₜ = mₜ / (1−β₁ᵗ)，v̂ₜ = vₜ / (1−β₂ᵗ)</div>
+<div class="formula">θₜ = θₜ₋₁ − α m̂ₜ / (√v̂ₜ + ε)</div>
+<p>β=0.9 表示旧平均占0.9，新观测占0.1；不是取最近九次的简单平均。零初始化会使早期的历史估计偏小，校正因子用于抵消这种初始化影响。这里的“偏差”与网络偏置 b 是两个概念。</p>
+<p class="source">公式与参数默认值依据<a href="https://arxiv.org/pdf/1412.6980#page=2">Adam 原论文 Algorithm 1，第2页</a>；偏差校正见第3节。本文代码按公式直接编写，不依赖教材作者的源码。</p></section>
+<section id="code"><h2>可手敲的完整类</h2>
+<pre><code id="adam-code">import numpy as np
+
+
+class Adam:
+    def __init__(self, lr=0.001, beta1=0.9, beta2=0.999, eps=1e-8):
+        self.lr = lr
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.eps = eps
+        self.step = 0
+        self.m = None
+        self.v = None
+
+    def update(self, params, grads):
+        # 只在第一次调用时初始化历史状态
+        if self.m is None:
+            self.m = {}
+            self.v = {}
+            for key, val in params.items():
+                self.m[key] = np.zeros_like(val)
+                self.v[key] = np.zeros_like(val)
+
+        # 一次 update 加一次，放在参数循环外
+        self.step += 1
+
+        for key in params:
+            g = grads[key]
+
+            self.m[key] = self.beta1 * self.m[key] + (1 - self.beta1) * g
+            self.v[key] = self.beta2 * self.v[key] + (1 - self.beta2) * g ** 2
+
+            m_hat = self.m[key] / (1 - self.beta1 ** self.step)
+            v_hat = self.v[key] / (1 - self.beta2 ** self.step)
+
+            params[key] -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)</code></pre>
+<p>if 内只初始化；step 加一及最后的 for 每次执行。m_hat、v_hat 是本轮校正结果，原始 m、v 留待下一轮继续累积。Python 的 <code>**</code> 表示乘方，例如 <code>beta1 ** self.step</code> 对应 β₁ᵗ。</p>
+<pre><code># 放在训练循环外，保留同一个优化器的历史状态
+optimizer = Adam(lr=0.001)
+
+# 放在训练循环内，替换原来的手动 SGD 更新
+grads = network.gradient(x_batch, t_batch)
+optimizer.update(network.params, grads)</code></pre>
+<p>参数数组沿用网络中的浮点数组；update 原地修改它们，无需 return。梯度由 network.gradient 计算；Adam 不负责反向传播，也不修改输入图片。</p></section>
+<nav class="lesson-nav"><a href="../lessons/0010-adam-update.html">逐步解释与短练习</a><a href="index.html">回到手册入口</a></nav>
+<footer class="footer">2026-11-02 · 对应第6章 Adam；未修改学习 notebook。</footer>
+</main></body></html>

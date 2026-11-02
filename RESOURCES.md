@@ -38,6 +38,17 @@
 - [第5章完整笔记](notes/斋藤-深度学习入门/05-误差反向传播法.md)、[HTML手册](reference/chapter5.html)与[反向流程短练习](lessons/0009-backprop-review.html)：覆盖计算图、链式法则、各层、组装、梯度确认和本次实验，连接已有0007、0008短课。
 - [教材 TwoLayerNet](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch05/two_layer_net.py)、[梯度确认](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch05/gradient_check.py)与[训练循环](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch05/train_neuralnet.py)：核对教材的层顺序、梯度收集及参数更新。
 
+### 第6章当前问题：Adam 的公式与实现
+
+- [Adam 原论文](https://arxiv.org/pdf/1412.6980)：已核对 Algorithm 1（PDF第2页）及第2、3节，包含梯度及梯度平方的指数移动平均、零初始化的偏差校正和参数更新。用户要求根据公式手敲最小实现，不下载整套作者源码；暂不要求论文推导。
+- [Adam 一次更新短课](lessons/0010-adam-update.html)与[公式、完整代码速查](reference/adam.html)：显式计算 m_hat、v_hat，对照公式解释变量与初始化层级，并提供单参数例子和即时反馈短题。
+
+### 第6章后半章：阅读与动手范围
+
+- [本地教材6.2起](<materials/深度学习入门：基于Python的理论与实现 (斋藤康毅).pdf#page=201>)：已核对权重初始化、BatchNorm、正则化及超参数验证的小节；Dropout完整类位于PDF218页。用户当前选择先会用Adam，后半章阅读为主，手写关键小实现，完整实验不要求逐行复现。
+- 第6.2.2节：[激活值分布逐行注释](reference/activation-distribution.html)与[层间连接短练习](lessons/0011-activation-distribution.html)，对照当前notebook说明数组形状、字典保存、展平和直方图；原代码位于教材PDF202—203页。
+- API一手说明：[randn正态采样](https://numpy.org/doc/stable/reference/random/generated/numpy.random.randn.html)、[dot矩阵乘法](https://numpy.org/doc/stable/reference/generated/numpy.dot.html)、[flatten一维副本](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.flatten.html)、[subplot布局](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplot.html)、[hist直方图](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html)。
+
 ## Wisdom (Communities)
 
 当前需求是本地教材复习与代码辅导，暂不扩展社区资源。

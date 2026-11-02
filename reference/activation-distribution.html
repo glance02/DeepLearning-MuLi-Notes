@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>激活值分布实验逐行注释</title><link rel="stylesheet" href="../assets/teach.css"><script src="../assets/teach.js" defer></script></head>
+<body><main class="main reading"><header class="hero"><p class="eyebrow">REFERENCE / CH 6.2.2</p><h1>激活值分布实验：逐行注释</h1><p class="lead">1000个随机样本经过5层前向计算，保存每层输出，再画5幅直方图。</p></header>
+<section id="code"><h2>对应自己 Notebook 的代码</h2><p>采用当前 <a href="../mycode/chapter6.ipynb">chapter6.ipynb</a> 的变量名：z 是矩阵乘法结果，a 是 sigmoid 的输出。这里研究初始化时信号怎样传播，没有计算损失或更新权重。</p>
+<pre><code>import numpy as np                    # 用 np 调用 NumPy
+import matplotlib.pyplot as plt        # 用 plt 调用绘图函数
+from common.functions import sigmoid   # 导入自己公共模块中的 sigmoid
+
+x = np.random.randn(1000, 100)          # 1000个样本，每个100个输入特征
+node_num = 100                         # 每层100个神经元
+hidden_layer_size = 5                   # 向前计算5层
+activations = {}                        # 字典：层编号 → 该层输出数组
+
+for i in range(hidden_layer_size):      # i 依次为0、1、2、3、4
+    if i != 0:                         # 第一层以外，都使用上一层输出
+        x = activations[i - 1]         # 右侧是上一轮保存的整个数组
+
+    w = np.random.randn(node_num, node_num) * 1  # 本层(100,100)权重
+    # w = np.random.randn(node_num, node_num) * 0.01
+    # 上一行是注释，不执行；改用它可以比较不同的初始化尺度
+
+    z = np.dot(x, w)                    # (1000,100) @ (100,100) → (1000,100)
+    a = sigmoid(z)                      # 逐元素经过 sigmoid，形状不变
+    activations[i] = a                  # 用当前层编号保存1000×100个输出
+
+for i, a in activations.items():        # 一次取出一个层编号和整层输出
+    plt.subplot(1, len(activations), i + 1)  # 1行5列，选中第i+1个子图
+    plt.title(str(i + 1) + "-layer")     # 标题为1-layer到5-layer
+    plt.hist(a.flatten(), 30, range=(0, 1))  # 展平后按30个区间统计
+
+plt.show()                             # 显示画好的图</code></pre></section>
+<section id="shapes"><h2>数组里的每个维度</h2><div class="table-wrap"><table><thead><tr><th>数组</th><th>形状</th><th>含义</th></tr></thead><tbody>
+<tr><td>x</td><td>(1000,100)</td><td>一行一个样本，一列一个输入特征或上一层神经元输出</td></tr>
+<tr><td>w</td><td>(100,100)</td><td>一行对应一个输入位置，一列对应当前层一个神经元</td></tr>
+<tr><td>z</td><td>(1000,100)</td><td>1000个样本在当前层100个神经元上的加权求和结果</td></tr>
+<tr><td>a</td><td>(1000,100)</td><td>对 z 逐元素应用 sigmoid 后的激活值</td></tr>
+<tr><td>a.flatten()</td><td>(100000,)</td><td>汇集这一层的全部激活值，用来画一幅分布图</td></tr>
+</tbody></table></div>
+<p>二维数组的 np.dot 在这里做矩阵乘法。对某个样本、某个输出神经元，都是把100个输入分别乘对应权重，再相加。实验没有写偏置项，可视为偏置为零。</p>
+<p class="source">核对 <a href="https://numpy.org/doc/stable/reference/generated/numpy.dot.html">NumPy dot</a> 与 <a href="../mycode/common/functions.py">本地 sigmoid 实现</a>。</p></section>
+<section id="loops"><h2>两个循环各在做什么</h2><p>第一个循环计算网络的5层，每次都会为当前层生成新的 w。它不是训练5次，也不是让输入通过同一份权重5次。</p>
+<div class="table-wrap"><table><thead><tr><th>i</th><th>本轮输入</th><th>本轮保存</th></tr></thead><tbody>
+<tr><td>0</td><td>最初的随机 x</td><td>activations[0]</td></tr>
+<tr><td>1</td><td>activations[0]</td><td>activations[1]</td></tr>
+<tr><td>2</td><td>activations[1]</td><td>activations[2]</td></tr>
+<tr><td>3</td><td>activations[2]</td><td>activations[3]</td></tr>
+<tr><td>4</td><td>activations[3]</td><td>activations[4]</td></tr>
+</tbody></table></div><p>第二个循环只负责画图，i 是字典的键，a 是该层保存的输出数组。它位于第一个循环之外，等5层都算完后执行。</p></section>
+<section id="histogram"><h2>直方图的参数</h2><p>np.random.randn 从均值0、标准差1的正态分布采样，不是只生成0到1之间的数。权重乘1保持该尺度；乘0.01使其采样分布标准差变为0.01。</p>
+<p>sigmoid(z)=1/(1+exp(−z))。理论输出在0和1之间：z=0时输出0.5，负值越大幅度越接近0，正值越大越接近1。由于浮点精度，实际结果可能恰好等于端点。</p>
+<p>flatten() 返回一维副本，不改变原数组。hist 的30表示在0到1之间划分30个等宽区间，纵轴为落入各区间的激活值个数；每幅图统计本层100000个输出。range=(0,1) 是 hist 的命名参数，与 for 中的 range(5) 用途不同。subplot 的位置从1开始，因此使用 i+1。</p>
+<p class="source">一手说明：<a href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.randn.html">randn</a>、<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.flatten.html">flatten</a>、<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplot.html">subplot</a>、<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html">hist</a>。</p></section>
+<nav class="lesson-nav"><a href="../lessons/0011-activation-distribution.html">只看层间连接的短练习</a><a href="index.html">回到手册入口</a></nav><footer class="footer">2026-11-02 · 第6.2.2节配套速查；未修改 notebook。</footer></main></body></html>
