@@ -1,0 +1,12 @@
+/* Python code colors for the existing light teaching pages. */
+pre code.hljs{display:block;padding:0;background:transparent;color:#24292e;overflow:visible}
+.hljs-keyword,.hljs-literal{color:#8a2aa6;font-weight:600}
+.hljs-title.function_,.hljs-title.class_,.hljs-title.class_.inherited__{color:#005cc5}
+.hljs-string,.hljs-regexp{color:#287b33}
+.hljs-comment,.hljs-quote{color:#647277;font-style:italic}
+.hljs-number,.hljs-symbol{color:#a34b0d}
+.hljs-built_in,.hljs-type{color:#8b6500}
+.hljs-meta,.hljs-meta .hljs-keyword{color:#985600}
+.hljs-variable.language_{color:#9e3c50}
+.hljs-subst,.hljs-params{color:#24292e}
+@media print{pre code.hljs{color:#111}.hljs-comment{color:#555}.hljs-keyword,.hljs-literal{color:#63317b}}

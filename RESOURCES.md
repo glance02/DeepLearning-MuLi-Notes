@@ -4,7 +4,7 @@
 
 - [斋藤康毅《深度学习入门：基于Python的理论与实现》](<materials/深度学习入门：基于Python的理论与实现 (斋藤康毅).pdf>)：首要教材；前四章为书内1—119页，对应PDF第26—144页。概念、公式与算法说明优先回到对应小节核对。
 - [自己的复现代码](mycode/)：对照实际函数名、输入输出形状、数据预处理与调用关系。它是实践材料，代码存在不等于理解已经核验。
-- [第1—5章Markdown笔记](notes/斋藤-深度学习入门/00-学习导航.md)：教材与代码的衍生整理，保存已讨论的易混点；用于复习定位。
+- [已读章节Markdown笔记](notes/斋藤-深度学习入门/00-学习导航.md)：教材与代码的衍生整理，保存已讨论的易混点；用于复习定位。
 - [学习记录](learning-records/)：根据用户独立回答记录理解证据，用于调整复习难度，不作为算法知识的一手来源。
 - [HTML手边册](reference/index.html)：按概念和函数名快速回查，内含教材页码与可选短练习入口。
 
@@ -47,7 +47,23 @@
 
 - [本地教材6.2起](<materials/深度学习入门：基于Python的理论与实现 (斋藤康毅).pdf#page=201>)：已核对权重初始化、BatchNorm、正则化及超参数验证的小节；Dropout完整类位于PDF218页。用户当前选择先会用Adam，后半章阅读为主，手写关键小实现，完整实验不要求逐行复现。
 - 第6.2.2节：[激活值分布逐行注释](reference/activation-distribution.html)与[层间连接短练习](lessons/0011-activation-distribution.html)，对照当前notebook说明数组形状、字典保存、展平和直方图；原代码位于教材PDF202—203页。
+- 第6.2.3节：已核对本地教材PDF206—208页（书内181—183页）图6-14、三种ReLU初始化及均值脚注；解释补入[ReLU读图速查](reference/activation-distribution.html#relu-reading)，区分正常归零、正值分布收缩与He的尺度补偿。
 - API一手说明：[randn正态采样](https://numpy.org/doc/stable/reference/random/generated/numpy.random.randn.html)、[dot矩阵乘法](https://numpy.org/doc/stable/reference/generated/numpy.dot.html)、[flatten一维副本](https://numpy.org/doc/stable/reference/generated/numpy.ndarray.flatten.html)、[subplot布局](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplot.html)、[hist直方图](https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html)。
+
+### 第6.3节：BatchNorm与旧训练结果的比较
+
+- [教材配套BatchNorm实验配置](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch06/batch_norm_test.py)：仅在线只读核对，未下载或导入项目。用于核对5个隐藏层、1000个训练样本、SGD学习率0.01及16种权重初始尺度，区分无BN对照组与用户第5章浅网络实验；教材图6-18、6-19位于本地PDF212—213页。
+
+### 第6.4节：过拟合实验依赖的多层网络
+
+- [作者MultiLayerNet定义](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/multi_layer_net.py)：在线只读核对hidden_size_list驱动的参数和层生成、初始化选择、权值衰减与前后向；用户已自己手敲固定ReLU、He和one-hot接口的最小版。可核对封装思路，不要求补完作者所有功能，也不下载整套源码。
+
+### 2026-11-03阶段整理：第六章尚未完成
+
+- [第六章阶段笔记](notes/斋藤-深度学习入门/06-与学习相关的技巧.md)与[HTML入口](reference/chapter6.html)：整理至6.4.1，下一小节权值衰减待学。
+- [MultiLayerNet完整梳理](reference/multi-layer-net.html)：按用户当前源码解释层宽、共享参数、方法调用和优化器更新；复用assets/network-lab.js的维度追踪，不运行浏览器训练。
+- 短课[12：参数与层](lessons/0012-multilayernet-parameters.html)、[13：一次更新](lessons/0013-multilayernet-training.html)：两个单独的小目标，每次按需选一项。
+- [本次过拟合图](assets/chapter6-overfitting.png)与[当前ReLU/Xavier图](assets/chapter6-activation.png)：直接从Notebook保存输出提取，不重新训练，不把图像读数当作精确最终指标。
 
 ## Wisdom (Communities)
 

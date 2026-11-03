@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>手敲 Adam 的一次更新 · 深度学习短课</title><link rel="stylesheet" href="../assets/teach.css"><script src="../assets/teach.js" defer></script></head>
+<title>手敲 Adam 的一次更新 · 深度学习短课</title><link rel="stylesheet" href="../assets/teach.css"><link rel="stylesheet" href="../assets/code-highlight.css"><script src="../assets/teach.js" defer></script><script src="../assets/vendor/highlight/highlight.min.js" defer></script><script src="../assets/code-highlight.js" defer></script></head>
 <body><div class="layout"><aside class="sidebar">
 <a class="brand" href="../reference/index.html"><small>DEEP LEARNING / CH 6</small>深度学习 · 逐小步学</a>
 <nav class="side-links" aria-label="本课导航"><a href="#history">两份历史</a><a href="#correction">偏差校正</a><a href="#update">更新一次</a><a href="#practice">自己算一次</a><a href="../reference/adam.html#code">完整代码速查</a></nav>
@@ -11,7 +11,7 @@
 <section id="history"><h2>先保存两份历史</h2>
 <p>m 保留有正负号的梯度历史，帮助确定更新方向；v 保留梯度平方历史，参与缩放各参数分量的步长。默认 β₁=0.9、β₂=0.999。</p>
 <div class="formula">mₜ = 0.9mₜ₋₁ + 0.1gₜ</div><div class="formula">vₜ = 0.999vₜ₋₁ + 0.001gₜ²</div>
-<pre><code>self.m[key] = self.beta1 * self.m[key] + (1 - self.beta1) * g
+<pre><code class="language-python">self.m[key] = self.beta1 * self.m[key] + (1 - self.beta1) * g
 self.v[key] = self.beta2 * self.v[key] + (1 - self.beta2) * g ** 2</code></pre>
 <p>赋值右侧使用上一次保存的 m、v，左侧保存本次结果。与 AdaGrad 的一直累加相比，这里的旧统计量会乘保留比例；Adam 的 v 也不表示 Momentum 中的速度。</p>
 <p>第一次更新，若 g=2、m₀=v₀=0，则 m₁=0.2，v₁=0.004。</p>
@@ -19,13 +19,13 @@ self.v[key] = self.beta2 * self.v[key] + (1 - self.beta2) * g ** 2</code></pre>
 <section id="correction"><h2>修正从零开始的影响</h2>
 <p>第一次只有一个观测，却和初始的零混合，得到的 m、v 偏小。使用已更新次数 t 做校正：</p>
 <div class="formula">m̂ₜ = mₜ / (1−β₁ᵗ)，v̂ₜ = vₜ / (1−β₂ᵗ)</div>
-<pre><code>m_hat = self.m[key] / (1 - self.beta1 ** self.step)
+<pre><code class="language-python">m_hat = self.m[key] / (1 - self.beta1 ** self.step)
 v_hat = self.v[key] / (1 - self.beta2 ** self.step)</code></pre>
 <p>本例 t=1，m̂₁=0.2/(1−0.9)=2，v̂₁=0.004/(1−0.999)=4。这里的“偏差校正”不是修改网络的偏置 b；m_hat 与 v_hat 不覆盖原始历史状态。</p>
 <p class="source">零初始化的影响与校正见<a href="https://arxiv.org/pdf/1412.6980#page=3">原论文第3节</a>。</p></section>
 <section id="update"><h2>最后才更新参数</h2>
 <div class="formula">参数 ← 参数 − lr × m_hat / (√v_hat + eps)</div>
-<pre><code>params[key] -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)</code></pre>
+<pre><code class="language-python">params[key] -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)</code></pre>
 <p>本例参数 w=1、lr=0.001，忽略很小的 eps，更新量为0.001×2/√4=0.001，得到 w≈0.999。eps 默认1e-8，用来使分母保持非零。</p>
 <p>手敲时打开<a href="../reference/adam.html#code">完整实现</a>：先写初始化与同形零数组，再写这五条公式，最后接回训练循环。同一个 optimizer 在循环外创建；step 在每次 update 中加一，放在遍历参数的 for 外。</p></section>
 <section id="practice"><h2>遮住上面的例子，算第一步</h2>

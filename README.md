@@ -186,6 +186,7 @@
 
 - **imgs**：笔记涉及到的图片
 - **notes**：按教材分类的 Markdown 笔记，见[笔记导航](notes/README.md)；[斋藤《深度学习入门》](notes/斋藤-深度学习入门/00-学习导航.md)、[李沐《动手学深度学习》](notes/李沐-动手学深度学习/)
+- **当前学习阶段**：[第六章进行中](reference/chapter6.html)，已整理至6.4.1；[MultiLayerNet代码梳理](reference/multi-layer-net.html)提供形状和调用链回查。
 - **code**：课程涉及到的python代码
 
 ## <img src="./imgs/icon/organizer.png" width="25" /> 组织者

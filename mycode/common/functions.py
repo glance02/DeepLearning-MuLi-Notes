@@ -9,6 +9,12 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
+def relu(x):
+    """逐元素计算 ReLU 激活函数。"""
+    x = np.asarray(x)
+    return np.maximum(0, x)
+
+
 def softmax(x):
     """将分数转换成概率；二维输入的每一行对应一个样本。"""
     x = np.asarray(x)

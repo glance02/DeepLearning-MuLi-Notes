@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>追踪5层的输入和输出 · 深度学习短课</title><link rel="stylesheet" href="../assets/teach.css"><script src="../assets/teach.js" defer></script></head>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>追踪5层的输入和输出 · 深度学习短课</title><link rel="stylesheet" href="../assets/teach.css"><link rel="stylesheet" href="../assets/code-highlight.css"><script src="../assets/teach.js" defer></script><script src="../assets/vendor/highlight/highlight.min.js" defer></script><script src="../assets/code-highlight.js" defer></script></head>
 <body><div class="layout"><aside class="sidebar"><a class="brand" href="../reference/index.html"><small>DEEP LEARNING / CH 6.2.2</small>深度学习 · 逐小步学</a><nav class="side-links" aria-label="本课导航"><a href="#flow">每层算什么</a><a href="#practice">自己追踪一次</a><a href="../reference/activation-distribution.html">逐行注释速查</a></nav><button class="secondary print-button" data-print type="button">打印当前页</button></aside>
 <main class="main reading"><header class="hero"><p class="eyebrow">LESSON 11 / ACTIVATIONS</p><h1>追踪5层的输入和输出</h1><p class="lead">先只搞清：每一层从哪里取输入，又把输出存在哪里。</p><div class="meta"><span>约3分钟</span><a href="../reference/activation-distribution.html#code">完整逐行注释</a></div></header>
 <div class="goal"><strong>这一小步的目标</strong>能解释 x = activations[i-1]，并说出一幅直方图统计了什么。</div>
-<section id="flow"><h2>每一层重复同一套计算</h2><pre><code>if i != 0:
+<section id="flow"><h2>每一层重复同一套计算</h2><pre><code class="language-python">if i != 0:
     x = activations[i - 1]
 w = np.random.randn(node_num, node_num) * 1
 z = np.dot(x, w)
@@ -20,5 +20,8 @@ activations[i] = a</code></pre>
 <label><input type="radio" name="layer-input" value="c"><span>activations[2]</span></label>
 </fieldset><div class="buttons"><button type="submit">核对答案</button><button class="secondary" type="reset">重新作答</button></div><p class="feedback" role="status" aria-live="polite"></p></form>
 <p>把你不清楚的那一行或你的理解发给我，我们只继续那一小步。隔一天可以先不看代码，画出前两层的输入输出连接。</p></section>
-<section><h2>回到资料</h2><p>原教材位置为6.2.2，书内177—178页：前向计算与绘图是两段。优先对照<a href="https://numpy.org/doc/stable/reference/generated/numpy.dot.html">NumPy官方矩阵乘法说明</a>和<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html">Matplotlib官方直方图说明</a>核对用法。</p></section>
+<section id="vanishing"><h2>下一小步：激活值为什么与梯度有关</h2><p>设 a=sigmoid(z)。前向图画的是 a；反向传播要乘的是局部导数 a(1−a)。当 a=0.99 时，局部导数为0.0099；当 a=0.5 时为0.25。</p><pre><code class="language-python"># 对应你第5章写过的 Sigmoid.backward
+dx = dout * (1.0 - self.out) * self.out</code></pre><p>如果后面传来 dout=1，且输出 self.out=0.99，往前传回的梯度为0.0099。多层连续乘小导数，可能让前面层收到的梯度非常小。仅为说明连乘，假设标量链的层间权重为1、各个 sigmoid 导数约为0.01：1 → 0.01 → 0.0001 → 0.000001。实际网络还包含权重与分支求和。</p><p>参数更新量取决于梯度，因此梯度太小时参数几乎不动。直方图没有直接测量梯度，它展示的激活值能提示 sigmoid 是否处在导数很小的区域。完整表格见<a href="../reference/activation-distribution.html#vanishing">梯度消失速查</a>。</p><p>先自己算一层：若 a=0.99、dout=2，往前传回的梯度是多少？把计算过程发给我即可，不继续旧的Adam公式题。</p></section>
+<section id="relu"><h2>再读ReLU的三行初始化图</h2><p>ReLU保留正输入，把负输入归零，所以零附近的高柱很正常。观察正值部分：标准差0.01时很快缩到零附近，Xavier时逐层收窄，He时宽度大致保持。这三行显示的是初始化时的前向输出，不是训练过程；ReLU还可以输出大于1的值，图中只展示了0到1的区间。</p><p>He的权重标准差为√(2/n)，本实验Xavier为√(1/n)；He通过调整权重尺度，补偿ReLU归零对信号尺度的影响。正输入处ReLU导数为1，不能套用sigmoid接近零输出就导数很小的解释。图与公式的完整对照见<a href="../reference/activation-distribution.html#relu-reading">ReLU初始化图速查</a>。</p></section>
+<section><h2>回到资料</h2><p>原教材位置为6.2.2，书内177—178页：前向计算与绘图是两段；ReLU对比为6.2.3的图6-14。优先对照<a href="https://numpy.org/doc/stable/reference/generated/numpy.dot.html">NumPy官方矩阵乘法说明</a>和<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html">Matplotlib官方直方图说明</a>核对用法。</p></section>
 <nav class="lesson-nav"><a href="../reference/activation-distribution.html">逐行注释与形状速查</a><a href="../reference/index.html">手册入口</a></nav><footer class="footer">2026-11-02 · 页面练习不自动写入掌握记录；Adam公式题继续暂缓。</footer></main></div></body></html>

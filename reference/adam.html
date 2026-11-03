@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Adam 公式与 NumPy 实现速查</title><link rel="stylesheet" href="../assets/teach.css"><script src="../assets/teach.js" defer></script></head>
+<title>Adam 公式与 NumPy 实现速查</title><link rel="stylesheet" href="../assets/teach.css"><link rel="stylesheet" href="../assets/code-highlight.css"><script src="../assets/teach.js" defer></script><script src="../assets/vendor/highlight/highlight.min.js" defer></script><script src="../assets/code-highlight.js" defer></script></head>
 <body><main class="main reading">
 <header class="hero"><p class="eyebrow">REFERENCE / CH 6</p><h1>Adam：公式与代码对照</h1><p class="lead">手敲用的直接实现：显式计算两份偏差校正后的历史统计量。</p></header>
 <section id="symbols"><h2>符号与变量</h2>
@@ -21,7 +21,7 @@
 <p>β=0.9 表示旧平均占0.9，新观测占0.1；不是取最近九次的简单平均。零初始化会使早期的历史估计偏小，校正因子用于抵消这种初始化影响。这里的“偏差”与网络偏置 b 是两个概念。</p>
 <p class="source">公式与参数默认值依据<a href="https://arxiv.org/pdf/1412.6980#page=2">Adam 原论文 Algorithm 1，第2页</a>；偏差校正见第3节。本文代码按公式直接编写，不依赖教材作者的源码。</p></section>
 <section id="code"><h2>可手敲的完整类</h2>
-<pre><code id="adam-code">import numpy as np
+<pre><code id="adam-code" class="language-python">import numpy as np
 
 
 class Adam:
@@ -57,7 +57,7 @@ class Adam:
 
             params[key] -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)</code></pre>
 <p>if 内只初始化；step 加一及最后的 for 每次执行。m_hat、v_hat 是本轮校正结果，原始 m、v 留待下一轮继续累积。Python 的 <code>**</code> 表示乘方，例如 <code>beta1 ** self.step</code> 对应 β₁ᵗ。</p>
-<pre><code># 放在训练循环外，保留同一个优化器的历史状态
+<pre><code class="language-python"># 放在训练循环外，保留同一个优化器的历史状态
 optimizer = Adam(lr=0.001)
 
 # 放在训练循环内，替换原来的手动 SGD 更新

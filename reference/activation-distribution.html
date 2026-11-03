@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>激活值分布实验逐行注释</title><link rel="stylesheet" href="../assets/teach.css"><script src="../assets/teach.js" defer></script></head>
+<title>激活值分布实验逐行注释</title><link rel="stylesheet" href="../assets/teach.css"><link rel="stylesheet" href="../assets/code-highlight.css"><script src="../assets/teach.js" defer></script><script src="../assets/vendor/highlight/highlight.min.js" defer></script><script src="../assets/code-highlight.js" defer></script></head>
 <body><main class="main reading"><header class="hero"><p class="eyebrow">REFERENCE / CH 6.2.2</p><h1>激活值分布实验：逐行注释</h1><p class="lead">1000个随机样本经过5层前向计算，保存每层输出，再画5幅直方图。</p></header>
 <section id="code"><h2>对应自己 Notebook 的代码</h2><p>采用当前 <a href="../mycode/chapter6.ipynb">chapter6.ipynb</a> 的变量名：z 是矩阵乘法结果，a 是 sigmoid 的输出。这里研究初始化时信号怎样传播，没有计算损失或更新权重。</p>
-<pre><code>import numpy as np                    # 用 np 调用 NumPy
+<pre><code class="language-python">import numpy as np                    # 用 np 调用 NumPy
 import matplotlib.pyplot as plt        # 用 plt 调用绘图函数
 from common.functions import sigmoid   # 导入自己公共模块中的 sigmoid
 
@@ -51,4 +51,49 @@ plt.show()                             # 显示画好的图</code></pre></sectio
 <p>sigmoid(z)=1/(1+exp(−z))。理论输出在0和1之间：z=0时输出0.5，负值越大幅度越接近0，正值越大越接近1。由于浮点精度，实际结果可能恰好等于端点。</p>
 <p>flatten() 返回一维副本，不改变原数组。hist 的30表示在0到1之间划分30个等宽区间，纵轴为落入各区间的激活值个数；每幅图统计本层100000个输出。range=(0,1) 是 hist 的命名参数，与 for 中的 range(5) 用途不同。subplot 的位置从1开始，因此使用 i+1。</p>
 <p class="source">一手说明：<a href="https://numpy.org/doc/stable/reference/random/generated/numpy.random.randn.html">randn</a>、<a href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.flatten.html">flatten</a>、<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.subplot.html">subplot</a>、<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html">hist</a>。</p></section>
-<nav class="lesson-nav"><a href="../lessons/0011-activation-distribution.html">只看层间连接的短练习</a><a href="index.html">回到手册入口</a></nav><footer class="footer">2026-11-02 · 第6.2.2节配套速查；未修改 notebook。</footer></main></body></html>
+<section id="vanishing"><h2>输出靠近0或1，为什么会让梯度变小？</h2>
+<p>当前代码先算 z=xW，再算 a=sigmoid(z)。a 是前向输出；sigmoid 的局部导数为 da/dz=a(1−a)，它描述输入 z 小幅变化时输出 a 的敏感程度。S形曲线两端较平，输出已接近0或1时，输入再小幅改变，输出变化很小。</p>
+<div class="table-wrap"><table><thead><tr><th>输出 a</th><th>局部导数 a(1−a)</th></tr></thead><tbody><tr><td>0.5</td><td>0.25</td></tr><tr><td>0.99</td><td>0.0099</td></tr><tr><td>0.01</td><td>0.0099</td></tr><tr><td>0.9999</td><td>0.00009999</td></tr></tbody></table></div>
+<p>你在第5章的 Sigmoid.backward 中已写过：</p><pre><code class="language-python">dx = dout * (1.0 - self.out) * self.out</code></pre>
+<p>这里 self.out 就是 sigmoid 的输出 a；dout 是后面传来的损失对 a 的梯度。反向传播乘上局部导数，得到损失对本层输入 z 的梯度：</p><div class="formula">∂L/∂z = (∂L/∂a) × a(1−a)</div>
+<p>例如 a=0.99，后面传来 dout=1，则往前传出的梯度是0.0099。若多个 sigmoid 连续处于这种区域，反向经过它们时就会连续乘上小数。</p>
+<p>取一个只为说明连乘的标量例子：层间权重均为1，各个 sigmoid 的局部导数约为0.01，后面传来的梯度为1。连续经过三个 sigmoid，梯度约为：</p><pre><code class="language-python">后面传来 1 → 0.01 → 0.0001 → 0.000001 → 更前面的层</code></pre>
+<p>实际网络反向传播还包含权重乘法和分支求和。这里展示的是激活函数导数造成缩小的这一部分；如果其他运算没有抵消，多层累积后，靠前层的梯度可能非常小。SGD更新量为 −lr×梯度，于是相关参数几乎不动，学习变慢或停滞。所谓“消失”通常是很小、不足以有效更新，不要求数学上恰好为0。</p>
+<p>直方图统计的是前向激活值。它们大量靠近0或1，说明许多 sigmoid 正处在局部导数很小的区域；图本身没有运行反向传播，也没有直接测量梯度。</p>
+<p class="source">公式由 sigmoid(z)=1/(1+exp(−z)) 求导得到；实现对应<a href="../mycode/common/functions.py">本地sigmoid函数</a>与<a href="../mycode/chapter5.ipynb">自己第5章的Sigmoid.backward</a>，衔接教材6.2.2的梯度消失说明。</p>
+</section>
+<section id="xavier-reading"><h2>怎样读当前 Xavier 初始化的5幅直方图</h2>
+<p>当前 notebook 使用 w=randn(100,100)/sqrt(100)，即将随机权重除以10；采样分布标准差为0.1。这对应教材本实验的 Xavier 初始化。用户提供的图是同一次前向计算的5个层，不是5次训练或5个epoch。</p>
+<p>每幅图横轴为该层 sigmoid 输出 a 的数值，范围0到1；纵轴为落入某一区间的激活值数量。每层1000个样本、每样本100个输出，所以一幅图统计100000个值。hist的30将0到1分成30个等宽区间；例如柱高8000表示该区间有8000个激活值，不是8000个样本。各子图纵轴会自动缩放，比较柱子应读刻度。</p>
+<p>当前图第1层分布较宽，中间多、两边少；第2层相对收窄，后面几层仍在中间区域保留了一定宽度，没有大量挤在0和1端点，也没有全部压成0.5附近的一根窄柱。各层宽度与形状并非严格单调变化。后面层的局部尖峰不表示梯度突然增大：图里只统计前向输出。</p>
+<p>后几层的锯齿可能与随机权重、有限神经元数量以及各神经元输出聚集在不同区间有关。下一层输入是上一层经过sigmoid的输出，已经不同于最初的正态输入，因此后层直方图不需要与第1层保持相同形状。</p>
+<div class="table-wrap"><table><thead><tr><th>初始化方式</th><th>在本节实验中关注的典型现象</th></tr></thead><tbody>
+<tr><td>randn(...)×1</td><td>许多激活值靠近0或1，sigmoid处于导数很小的区域</td></tr>
+<tr><td>randn(...)×0.01</td><td>加权输入偏小，输出容易集中在0.5附近，分布很窄</td></tr>
+<tr><td>randn(...)/sqrt(输入节点数)</td><td>当前图中输出主要位于中间，并在深层保留一定分布宽度</td></tr>
+</tbody></table></div>
+<p>sigmoid在a=0.5时局部导数为0.25，在a=0.99时为0.0099。当前图提示大量单元没有处在极端饱和区，因饱和造成的局部导数缩小较轻。但直方图没有直接测量权重梯度、学习速度或准确率，不能仅凭它确认梯度不消失或训练成功。</p>
+<p>这里检查的是学习开始前的信号传播状态。解释依据当前<a href="../mycode/chapter6.ipynb">实验代码</a>、用户提供的图、<a href="../mycode/common/functions.py">sigmoid定义</a>以及本节权重尺度对比；柱子统计语义见<a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html">Matplotlib hist</a>。</p>
+</section>
+<section id="relu-reading"><h2>ReLU的三行图：重点比较正值部分的宽度</h2>
+<p>教材图6-14的三行分别对应标准差0.01、Xavier与He初始化；每行从左到右是同一个5层网络的各层前向输出。横轴是ReLU激活值，纵轴是区间内的激活值数量；它们不是权重分布，也不是训练进度。</p>
+<pre><code class="language-python">ReLU(z) = max(0, z)
+输入：[-2.0, -0.4, 0.3, 1.5]
+输出：[ 0.0,  0.0, 0.3, 1.5]</code></pre>
+<p>负输入被归零，因此三行都会有零附近的高柱。左柱顶到图框时，可见高度不足以读出实际数量。图的横轴只展示0到1，ReLU正值输出可以超过1；这一窗口也不是完整的输出范围。读图时观察剩下的正值部分有没有随层数加深不断向0收缩。</p>
+<div class="table-wrap"><table><thead><tr><th>初始化</th><th>图中变化</th><th>含义</th></tr></thead><tbody>
+<tr><td>标准差0.01</td><td>第1层已集中在0附近，后几层几乎都落在最左侧区间</td><td>信号尺度很快缩小；并非所有值都恰好等于0</td></tr>
+<tr><td>Xavier，标准差√(1/n)</td><td>正值分布逐层向左收缩，靠近0的值越来越多</td><td>对本实验的ReLU网络，初始化未能充分保持传播尺度</td></tr>
+<tr><td>He，标准差√(2/n)</td><td>各层正值部分仍保持大致相近的宽度</td><td>更好地保持了初始化时的信号尺度，零柱仍然正常存在</td></tr>
+</tbody></table></div>
+<p>原教材脚注给出第一行激活值平均数：第1层0.0396、第2层0.00290、第3层0.000197、第4层1.32e-5、第5层9.46e-7。许多后层正数只是非常小，被直方图并进零附近的区间。</p>
+<p>He多出的系数2可以这样理解：对近似零中心、正负对称的输入，ReLU把负值归零后，输出的平方平均约只剩一半。He使用2/n的权重方差，在常用独立性等近似下补偿这种缩小；与本实验Xavier相比，标准差乘的是√2，约1.414，而不是2。</p>
+<pre><code class="language-python"># n 是本层输入节点数；本实验每层同宽，所以 n=node_num
+w = np.random.randn(node_num, node_num) * np.sqrt(2.0 / node_num)
+z = np.dot(x, w)
+a = np.maximum(0, z)  # 此处使用ReLU</code></pre>
+<p>若n=100，三种采样分布的标准差依次为0.01、0.1和约0.1414。初始化与激活函数要配合；不要只换He权重却仍用sigmoid来声称复现这张ReLU图。</p>
+<p>ReLU与sigmoid的反向性质不同：只要z&gt;0，ReLU的局部导数为1，即使输出很小也是如此；z&lt;0时导数为0（零点实现通常也取0）。因此不能把sigmoid两端饱和的解释直接套过来。小激活值会影响后续计算与参数梯度，反向又会经过权重乘法和置零门控，多层传播的整体尺度仍可能衰减。图本身只显示前向分布，没有直接测量梯度或训练准确率。</p>
+<p class="source">来源：本地教材6.2.3，书内181—183页（PDF206—208页），图6-14及脚注；读图依据用户提供的同一幅图。</p>
+</section>
+<nav class="lesson-nav"><a href="../lessons/0011-activation-distribution.html#relu">ReLU初始化图短解释</a><a href="index.html">回到手册入口</a></nav><footer class="footer">2026-11-03 · 第6.2.2—6.2.3节配套速查；未修改 notebook。</footer></main></body></html>

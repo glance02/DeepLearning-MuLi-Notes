@@ -90,7 +90,10 @@ def note_page(source: str, text: str, note_sources: list[str], titles: dict[str,
 <title>{title} · 深度学习手边册</title>
 <link rel="stylesheet" href="{relative('assets/teach.css')}">
 <link rel="stylesheet" href="{relative('assets/site-notes.css')}">
+<link rel="stylesheet" href="{relative('assets/code-highlight.css')}">
 <script src="{relative('assets/teach.js')}" defer></script>
+<script src="{relative('assets/vendor/highlight/highlight.min.js')}" defer></script>
+<script src="{relative('assets/code-highlight.js')}" defer></script>
 <script src="{relative('assets/site-math.js')}" defer></script>
 <script src="{relative('assets/vendor/mathjax/tex-svg-full.js')}" defer></script></head>
 <body><div class="layout"><aside class="sidebar">
