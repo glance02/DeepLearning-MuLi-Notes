@@ -74,22 +74,11 @@ test_acc_list.append(test_acc)</code></pre><p>你已修正了此前两个列表�
 \]</div></div><p>前向计算数值，反向传回最终损失对各变量的导数。<code>dout</code>是传入的∂L/∂out，乘上本节点的局部导数，才得到∂L/∂x。</p><p>若out=x×y、L=5×out，那么dout=5；x=3、y=4时，dx=20、dy=15。</p><pre><code class="language-python">dx = dout * local_derivative
 # 损失对自身的导数为1：∂L/∂L = 1
 dout = last_layer.backward(1)</code></pre><p class="source"><a href="chapter5.html#chain">教材5.1—5.2 · 链式法则</a><a href="../notes/斋藤-深度学习入门/05-误差反向传播法.md">完整笔记</a></p></article>
-<article class="card" id="ch5-simple" data-ref data-keywords="第5章 AddLayer MulLayer 加法 乘法 forward 缓存 交叉相乘 分支"><h3>加法层与乘法层</h3><div class="formula"><div class="arithmatex">\[
-\begin{aligned}
-z=x+y &amp;: \quad \frac{\partial L}{\partial x}=\frac{\partial L}{\partial z},\quad \frac{\partial L}{\partial y}=\frac{\partial L}{\partial z}\\
-z=xy &amp;: \quad \frac{\partial L}{\partial x}=\frac{\partial L}{\partial z}y,\quad \frac{\partial L}{\partial y}=\frac{\partial L}{\partial z}x
-\end{aligned}
-\]</div></div><div class="table-wrap"><table><thead><tr><th>前向</th><th>反向</th></tr></thead><tbody><tr><td>out=x+y</td><td>dx=dout，dy=dout</td></tr><tr><td>out=x×y</td><td>dx=dout×y，dy=dout×x</td></tr></tbody></table></div><p>乘法层前向保存x、y，反向交叉相乘。若一个变量流向多条分支，回到该变量的导数要相加。</p><pre><code class="language-python">def backward(self, dout):
+<article class="card" id="ch5-simple" data-ref data-keywords="第5章 AddLayer MulLayer 加法 乘法 forward 缓存 交叉相乘 分支"><h3>加法层与乘法层</h3><div class="table-wrap"><table><thead><tr><th>前向</th><th>反向</th></tr></thead><tbody><tr><td>out=x+y</td><td>dx=dout，dy=dout</td></tr><tr><td>out=x×y</td><td>dx=dout×y，dy=dout×x</td></tr></tbody></table></div><p>乘法层前向保存x、y，反向交叉相乘。若一个变量流向多条分支，回到该变量的导数要相加。</p><pre><code class="language-python">def backward(self, dout):
     dx = dout * self.y
     dy = dout * self.x
     return dx, dy</code></pre><p class="source"><a href="mul-layer-backward.html">乘法层逐步解释</a><a href="../lessons/0007-mul-layer-backward.html">数值短练习</a><a href="chapter5.html#simple">教材5.3—5.4</a></p></article>
-<article class="card" id="ch5-relu" data-ref data-keywords="第5章 ReLU Relu mask 输入 小于等于0 导数"><h3>ReLU层</h3><div class="formula"><div class="arithmatex">\[
-\frac{\partial L}{\partial x}=
-\begin{cases}
-\frac{\partial L}{\partial y}, &amp; x&gt;0\\
-0, &amp; x\leq 0
-\end{cases}
-\]</div></div><p>输入x≤0时，前向输出0，反向也传0；x&gt;0时，前向保留原值，反向原样通过。教材在x=0处采用导数0。</p><p>mask保存的是本轮前向输入的位置判断，反向不重新判断dout的正负。</p><pre><code class="language-python"># forward中保存
+<article class="card" id="ch5-relu" data-ref data-keywords="第5章 ReLU Relu mask 输入 小于等于0 导数"><h3>ReLU层</h3><p>输入x≤0时，前向输出0，反向也传0；x&gt;0时，前向保留原值，反向原样通过。教材在x=0处采用导数0。</p><p>mask保存的是本轮前向输入的位置判断，反向不重新判断dout的正负。</p><pre><code class="language-python"># forward中保存
 self.mask = (x &lt;= 0)
 # backward中复用
 dx = dout.copy()
@@ -113,21 +102,14 @@ dW = np.dot(self.x.T, dout)
 # dout: (N, H)
 # db:   (H,)</code></pre><p class="source"><a href="chapter5.html#bias">批量与共享偏置</a><a href="../mycode/common/layers.py">自己的Affine</a></p></article>
 <article class="card" id="ch5-softmax-loss" data-ref data-keywords="第5章 SoftmaxWithLoss softmax 交叉熵 one hot 标签 batch_size y t 平均"><h3>Softmax-with-Loss层</h3><div class="formula"><div class="arithmatex">\[
-\begin{aligned}
-L&amp;=-\frac{1}{N}\sum_{n,k}t_{nk}\log y_{nk}\\
-\frac{\partial L}{\partial a_{nk}}&amp;=\frac{y_{nk}-t_{nk}}{N}
-\end{aligned}
+\frac{\partial L}{\partial a_{nk}}=\frac{y_{nk}-t_{nk}}{N}
 \]</div></div><p>a为类别得分，y为softmax概率，n、k为样本与类别索引。交叉熵与softmax组合反向时，公式简化为(y−t)/N。</p><p>这里t是one-hot标签，N是样本数，dout=1。除以样本数对应本章平均损失。</p><pre><code class="language-python">batch_size = self.t.shape[0]
 dx = (self.y - self.t) / batch_size</code></pre><p class="source"><a href="chapter5.html#softmax-loss">教材5.6.3 · 损失层</a><a href="../mycode/common/layers.py">自己的损失层</a></p></article>
 <article class="card" id="ch5-network" data-ref data-keywords="第5章 TwoLayerNet OrderedDict layers params grads gradient 更新"><h3>网络组装与梯度计算</h3><p>按Affine1→ReLU→Affine2连接，最后接损失层。gradient先做本轮前向以保存缓存，再从损失层倒着传播，收集各Affine的dW、db。</p><p>grads与params同名、同形；计算梯度后，还要由优化器更新参数。</p><pre><code class="language-python">grads = network.gradient(x_batch, t_batch)
 optimizer.update(network.params, grads)</code></pre><p class="source"><a href="chapter5.html#network">教材5.7 · 网络组装</a><a href="multi-layer-net.html#backward">推广到多层网络</a><a href="../lessons/0009-backprop-review.html">反向流程短练习</a></p></article>
-<article class="card" id="ch5-check" data-ref data-keywords="第5章 gradient check 梯度确认 数值微分 中心差分 平均绝对误差"><h3>梯度确认</h3><div class="formula"><div class="arithmatex">\[
-D=\frac{1}{P}\sum_{i=1}^{P}\left|g_i^{\mathrm{backprop}}-g_i^{\mathrm{numerical}}\right|
-\]</div></div><p>在同一组参数、同一批数据上，比较数值梯度与反向传播梯度。P为该参数数组的元素数，将梯度按相同顺序展开后取平均绝对差；实际训练使用反向传播。</p><p>2026-10-31保存的四组平均绝对差约10⁻¹⁰—10⁻⁷。检查时先看形状，再看差异及具体实现。</p><pre><code class="language-python">diff = np.mean(np.abs(grad_backprop - grad_numerical))</code></pre><p class="source"><a href="chapter5.html#check">教材5.7.3 · 梯度确认</a><a href="../mycode/chapter5.ipynb">自己的检查输出</a></p></article>
-<article class="card" id="ch5-training" data-ref data-keywords="第5章 MNIST 训练 速度 20秒 10000 SGD 准确率"><h3>反向传播训练</h3><div class="formula"><div class="arithmatex">\[
-W_{\mathrm{new}}=W-\eta\frac{\partial L}{\partial W}
-\]</div></div><p>第四章数值微分每个参数要做多次前向；第五章用一次前向和反向得到全部参数梯度。SGD仍然沿负梯度方向更新。</p><p>2026-10-31实验设10000次更新，你报告约20秒；当次最后保存train97.895%、test97.04%。不同设置的后续运行要分别比较。</p><pre><code class="language-python">network.params[key] -= learning_rate * grads[key]</code></pre><p class="source"><a href="chapter5.html#experiment">当次配置与实际训练记录</a><a href="../notes/斋藤-深度学习入门/05-误差反向传播法.md">第五章笔记</a></p></article>
-</div></section><section class="chapter-section" id="chapter-6"><header class="section-head"><h2><span class="chapter-number">06</span> 学习技巧</h2><small>书内163—200页</small></header><p class="note">更新公式中，W<sub>t</sub>为第t次更新前的参数，g<sub>t</sub>为当前批次在该参数处的梯度，η为学习率；代码中的param、grad分别对应参数和梯度。平方、开方与除法均逐元素计算，⊙表示逐元素乘法。</p><div class="ref-grid">
+<article class="card" id="ch5-check" data-ref data-keywords="第5章 gradient check 梯度确认 数值微分 中心差分 平均绝对误差"><h3>梯度确认</h3><p>在同一组参数、同一批数据上，比较数值梯度与反向传播梯度：逐元素相减、取绝对值，再求平均。实际训练使用反向传播。</p><p>2026-10-31保存的四组平均绝对差约10⁻¹⁰—10⁻⁷。检查时先看形状，再看差异及具体实现。</p><pre><code class="language-python">diff = np.mean(np.abs(grad_backprop - grad_numerical))</code></pre><p class="source"><a href="chapter5.html#check">教材5.7.3 · 梯度确认</a><a href="../mycode/chapter5.ipynb">自己的检查输出</a></p></article>
+<article class="card" id="ch5-training" data-ref data-keywords="第5章 MNIST 训练 速度 20秒 10000 SGD 准确率"><h3>反向传播训练</h3><p>第四章数值微分每个参数要做多次前向；第五章用一次前向和反向得到全部参数梯度。SGD仍然沿负梯度方向更新。</p><p>2026-10-31实验设10000次更新，你报告约20秒；当次最后保存train97.895%、test97.04%。不同设置的后续运行要分别比较。</p><pre><code class="language-python">network.params[key] -= learning_rate * grads[key]</code></pre><p class="source"><a href="chapter5.html#experiment">当次配置与实际训练记录</a><a href="../notes/斋藤-深度学习入门/05-误差反向传播法.md">第五章笔记</a></p></article>
+</div></section><section class="chapter-section" id="chapter-6"><header class="section-head"><h2><span class="chapter-number">06</span> 学习技巧</h2><small>书内163—200页</small></header><p class="note">以下的公式中，W<sub>t</sub>为第t次更新前的参数，g<sub>t</sub>为当前批次在该参数处的梯度，η为学习率；代码中的param、grad分别对应参数和梯度。平方、开方与除法均逐元素计算，⊙表示逐元素乘法。</p><div class="ref-grid">
 <article class="card" id="ch6-sgd" data-ref data-keywords="第6章 SGD learning rate lr 学习率 params grads W b"><h3>SGD参数更新</h3><div class="formula"><div class="arithmatex">\[
 W_{t+1}=W_t-\eta g_t
 \]</div></div><p>gradient计算梯度，优化器负责修改W和b。普通训练不由优化器修改输入样本x。</p><p>学习率以优化器对象的lr为准；只写learning_rate=0.1，不会改变SGD()的默认值。</p><pre><code class="language-python">optimizer = SGD(lr=0.01)
@@ -160,25 +142,16 @@ v = beta2 * v + (1 - beta2) * grad**2
 m_hat = m / (1 - beta1 ** step)
 v_hat = v / (1 - beta2 ** step)
 param -= lr * m_hat / (np.sqrt(v_hat) + eps)</code></pre><p class="source"><a href="adam.html">公式与完整代码</a><a href="../lessons/0010-adam-update.html">单参数更新短练习</a></p></article>
-<article class="card" id="ch6-initialization" data-ref data-keywords="第6章 初始化 Xavier He 标准差 sigmoid ReLU 激活值 直方图 梯度消失"><h3>权重初始化与激活值分布</h3><div class="formula"><div class="arithmatex">\[
-\sigma_{\mathrm{Xavier}}=\sqrt{\frac{1}{n}},\qquad \sigma_{\mathrm{He}}=\sqrt{\frac{2}{n}}
-\]</div></div><div class="table-wrap"><table><thead><tr><th>本章初始化</th><th>权重标准差</th></tr></thead><tbody><tr><td>Xavier（本章写法）</td><td>√(1/n)</td></tr><tr><td>He（配合ReLU）</td><td>√(2/n)</td></tr></tbody></table></div><p>n是输入节点数。前向直方图实验没有训练；每幅图是不同层的输出分布，不是训练进度。</p><p>sigmoid靠近0/1时局部导数小；ReLU在0处堆积正常，还要看正值部分是否逐层收缩。直方图不直接测量梯度。</p><pre><code class="language-python">W = np.random.randn(input_num, output_num)
+<article class="card" id="ch6-initialization" data-ref data-keywords="第6章 初始化 Xavier He 标准差 sigmoid ReLU 激活值 直方图 梯度消失"><h3>权重初始化与激活值分布</h3><div class="table-wrap"><table><thead><tr><th>本章初始化</th><th>权重标准差</th></tr></thead><tbody><tr><td>Xavier（本章写法）</td><td>√(1/n)</td></tr><tr><td>He（配合ReLU）</td><td>√(2/n)</td></tr></tbody></table></div><p>n是输入节点数。前向直方图实验没有训练；每幅图是不同层的输出分布，不是训练进度。</p><p>sigmoid靠近0/1时局部导数小；ReLU在0处堆积正常，还要看正值部分是否逐层收缩。直方图不直接测量梯度。</p><pre><code class="language-python">W = np.random.randn(input_num, output_num)
 W *= np.sqrt(2.0 / input_num)  # He</code></pre><p class="source"><a href="activation-distribution.html">教材6.2 · 逐行注释与读图</a><a href="../lessons/0011-activation-distribution.html">层间连接短练习</a></p></article>
 <article class="card" id="ch6-batchnorm" data-ref data-keywords="第6章 BN Batch Normalization mini batch gamma beta 均值 方差"><h3>Batch Normalization</h3><div class="formula"><div class="arithmatex">\[
 \begin{aligned}
-\mu_B&amp;=\frac{1}{N}\sum_{i=1}^{N}x_i\\
-\sigma_B^2&amp;=\frac{1}{N}\sum_{i=1}^{N}(x_i-\mu_B)^2\\
 \hat{x}_i&amp;=\frac{x_i-\mu_B}{\sqrt{\sigma_B^2+\varepsilon}}\\
 y_i&amp;=\gamma\hat{x}_i+\beta
 \end{aligned}
-\]</div></div><p>在mini-batch中按特征求均值、方差，再标准化。N为本批样本数；γ、β是通过训练学习的缩放与平移参数。</p><p>教材顺序为Affine→BN→ReLU。BN帮助降低对初始化尺度的敏感性；不是图片除以255，也不意味着不用BN就无法训练。</p><pre><code class="language-python">x_hat = (x - batch_mean) / np.sqrt(batch_var + eps)
+\]</div></div><p>按特征计算本批的均值μ<sub>B</sub>与方差σ<sub>B</sub>²，再标准化。γ、β是通过训练学习的缩放与平移参数。</p><p>教材顺序为Affine→BN→ReLU。BN帮助降低对初始化尺度的敏感性；不是图片除以255，也不意味着不用BN就无法训练。</p><pre><code class="language-python">x_hat = (x - batch_mean) / np.sqrt(batch_var + eps)
 out = gamma * x_hat + beta</code></pre><p class="source"><a href="../notes/斋藤-深度学习入门/06-与学习相关的技巧.md">教材6.3 · 公式与实验比较</a><a href="chapter6.html#map">全章位置</a></p></article>
-<article class="card" id="ch6-multilayer" data-ref data-keywords="第6章 MultiLayerNet hidden_size_list all_size_list Affine params 共享数组"><h3>MultiLayerNet的结构与参数</h3><div class="formula"><div class="arithmatex">\[
-\begin{aligned}
-W^{(\ell)}&amp;\in\mathbb{R}^{n_{\ell-1}\times n_\ell}\\
-b^{(\ell)}&amp;\in\mathbb{R}^{n_\ell}
-\end{aligned}
-\]</div></div><p>n<sub>ℓ</sub>为第ℓ层宽度，相邻层宽决定W形状。4→3→5→2产生W1(4,3)、W2(3,5)、W3(5,2)，偏置长度分别为3、5、2。</p><p>params里的W与对应Affine.W共享数组；优化器原地更新后，下一轮前向就使用新参数。</p><pre><code class="language-python">all_size_list = [input_size] + hidden_size_list + [output_size]
+<article class="card" id="ch6-multilayer" data-ref data-keywords="第6章 MultiLayerNet hidden_size_list all_size_list Affine params 共享数组"><h3>MultiLayerNet的结构与参数</h3><p>相邻层宽决定W形状。4→3→5→2产生W1(4,3)、W2(3,5)、W3(5,2)，偏置长度分别为3、5、2。</p><p>params里的W与对应Affine.W共享数组；优化器原地更新后，下一轮前向就使用新参数。</p><pre><code class="language-python">all_size_list = [input_size] + hidden_size_list + [output_size]
 # 每个隐藏层：Affine → ReLU
 # 输出层：Affine，随后交给SoftmaxWithLoss</code></pre><p class="source"><a href="multi-layer-net.html">参数、方法与维度追踪</a><a href="../lessons/0012-multilayernet-parameters.html">参数与层短练习</a><a href="../mycode/common/multi_layer_net.py">自己的基础类</a></p></article>
 <article class="card" id="ch6-overfitting" data-ref data-keywords="第6章 过拟合 train test 准确率 泛化 差距 300样本"><h3>过拟合与泛化差距</h3><p>300个训练样本、6个100神经元隐藏层的实验中，train接近100%，test约75%—76%。训练继续提高、测试趋平，体现出明显泛化差距。</p><p>不要求test一定下降。加入正则化后，也要同时看差距和test表现；仅仅train降低不能证明模型变好。</p><pre><code class="language-python"># 两条指标分别保存，才能观察差距
@@ -191,13 +164,7 @@ L&amp;=L_{\mathrm{data}}+\frac{\lambda}{2}\sum_{\ell,j,k}(W^{(\ell)}_{jk})^2\\
 \end{aligned}
 \]</div></div><p>在交叉熵之外，加上所有W元素平方和的λ/2倍；对应权重梯度增加λW。本次只惩罚W，不惩罚b。</p><p>λ=0.1的保存结果为train92.00%、test73.55%。与无正则化组相比差距缩小，但本次test没有提高。</p><pre><code class="language-python">penalty += 0.5 * weight_decay_lambda * np.sum(W ** 2)
 grads[key] += weight_decay_lambda * params[key]</code></pre><p class="source"><a href="chapter6.html#weight-decay">教材6.4.2 · 公式与曲线</a><a href="../notes/斋藤-深度学习入门/06-与学习相关的技巧.md">完整笔记</a></p></article>
-<article class="card" id="ch6-dropout" data-ref data-keywords="第6章 Dropout dropout_ratio mask train_flg 保留比例 评价"><h3>Dropout</h3><div class="formula"><div class="arithmatex">\[
-\begin{aligned}
-y_{\mathrm{train}}&amp;=x\odot M\\
-\frac{\partial L}{\partial x}&amp;=\frac{\partial L}{\partial y}\odot M\\
-y_{\mathrm{eval}}&amp;=(1-p)x
-\end{aligned}
-\]</div></div><p>M是本轮布尔mask，p为dropout_ratio。训练前向随机屏蔽部分输出，反向复用同一张M；评价时不随机屏蔽，按教材版本乘以1−p。</p><p>train和test准确率都使用评价模式。ratio=0.2的保存结果为79.67%/62.98%，末段仍在上升。</p><pre><code class="language-python"># 训练前向
+<article class="card" id="ch6-dropout" data-ref data-keywords="第6章 Dropout dropout_ratio mask train_flg 保留比例 评价"><h3>Dropout</h3><p>训练前向随机屏蔽部分输出，反向复用本轮mask。评价时关闭随机屏蔽，按教材版本乘以保留比例。</p><p>train和test准确率都使用评价模式。ratio=0.2的保存结果为79.67%/62.98%，末段仍在上升。</p><pre><code class="language-python"># 训练前向
 mask = np.random.rand(*x.shape) &gt; dropout_ratio
 out = x * mask
 # 反向
@@ -205,9 +172,7 @@ dx = dout * mask
 # 评价前向
 out = x * (1.0 - dropout_ratio)</code></pre><p class="source"><a href="dropout.html">教材6.4.3 · 机制速查</a><a href="chapter6.html#dropout">实际曲线</a><a href="../lessons/0014-dropout-mask.html">mask短练习</a></p></article>
 <article class="card" id="ch6-validation" data-ref data-keywords="第6章 验证集 validation train test 数据划分 超参数 W b"><h3>数据集划分与用途</h3><div class="table-wrap"><table><thead><tr><th>数据</th><th>用途</th></tr></thead><tbody><tr><td>训练集</td><td>计算梯度，学习W、b</td></tr><tr><td>验证集</td><td>比较超参数，选择配置</td></tr><tr><td>测试集</td><td>配置确定后评价泛化</td></tr></tbody></table></div><p>教材示例先同步打乱图片与标签，再划出20%作验证集。正式调参时用验证集作选择，避免反复按测试结果调整配置。</p><p class="source"><a href="chapter6.html#hyperparameters">教材6.5.1 · 数据分工</a><a href="../notes/斋藤-深度学习入门/06-与学习相关的技巧.md">完整笔记</a></p></article>
-<article class="card" id="ch6-hyperparameters" data-ref data-keywords="第6章 超参数 最优化 随机搜索 对数尺度 log scale 学习率 λ 网格"><h3>超参数搜索</h3><div class="formula"><div class="arithmatex">\[
-r\sim\operatorname{Uniform}(a,b),\qquad \eta=10^r
-\]</div></div><p>设定较宽范围→随机采样→短期训练→比较验证结果→缩小范围。r为在[a,b)内均匀采样的指数；学习率η=10ʳ，示例a=−6、b=−2，可探索多个数量级。</p><p>图6-24实线为验证准确率、虚线为训练准确率，Best排序按验证结果。本节按你的安排只阅读，实际需要时再查实现。</p><pre><code class="language-python"># 阅读示例：学习率跨10⁻⁶到10⁻²
+<article class="card" id="ch6-hyperparameters" data-ref data-keywords="第6章 超参数 最优化 随机搜索 对数尺度 log scale 学习率 λ 网格"><h3>超参数搜索</h3><p>设定较宽范围→随机采样→短期训练→比较验证结果→缩小范围。先均匀抽指数，再取10的幂，可以探索多个数量级。</p><p>图6-24实线为验证准确率、虚线为训练准确率，Best排序按验证结果。本节按你的安排只阅读，实际需要时再查实现。</p><pre><code class="language-python"># 阅读示例：学习率跨10⁻⁶到10⁻²
 lr = 10 ** np.random.uniform(-6, -2)
 # 不是在两个端点之间直接均匀抽lr</code></pre><p class="source"><a href="chapter6.html#hyperparameters">教材6.5.2—6.5.3 · 搜索流程</a><a href="../notes/斋藤-深度学习入门/06-与学习相关的技巧.md">完整笔记</a></p></article>
 </div></section><section id="review"><header class="section-head"><h2>可选练习</h2><small>每次选一个即可</small></header><div class="lesson-cards"><a class="lesson-card" href="../lessons/0001-array-shapes.html"><strong>01 / 形状与广播</strong><span>跟踪一层网络的输入与输出<br>第1、3章 · 约3分钟</span></a><a class="lesson-card" href="../lessons/0002-perceptron.html"><strong>02 / 感知机的边界</strong><span>调参数，观察逻辑门与XOR<br>第2章 · 约4分钟</span></a><a class="lesson-card" href="../lessons/0003-scores-and-loss.html"><strong>03 / 从分数到损失</strong><span>区分softmax、argmax与交叉熵<br>第3、4章 · 约4分钟</span></a><a class="lesson-card" href="../lessons/0004-numerical-gradient.html"><strong>04 / 数值梯度逐步看</strong><span>只动一个分量，再恢复原值<br>第4章 · 约5分钟</span></a><a class="lesson-card" href="../lessons/0005-mini-batch.html"><strong>05 / 一次小批量更新</strong><span>抽样、固定数据求导、更新参数<br>第4章 · 约4分钟</span></a><a class="lesson-card" href="../lessons/0007-mul-layer-backward.html"><strong>07 / 乘法层反向传播</strong><span>dout 与交叉相乘<br>第5章 · 约3分钟</span></a><a class="lesson-card" href="../lessons/0008-affine-backward.html#affine-513"><strong>08 / Affine公式推导</strong><span>沿用书中符号理解两个转置<br>第5章 · 按段回查</span></a><a class="lesson-card" href="../lessons/0009-backprop-review.html"><strong>09 / 从损失反向走一遍</strong><span>梯度形状、ReLU规则与参数更新<br>第5章 · 约3分钟</span></a><a class="lesson-card" href="../lessons/0012-multilayernet-parameters.html"><strong>12 / 参数怎样装进层</strong><span>MultiLayerNet的层宽、W/b与共享数组<br>第6章 · 约3分钟</span></a><a class="lesson-card" href="../lessons/0013-multilayernet-training.html"><strong>13 / 从得分到一次更新</strong><span>loss、gradient和SGD的调用关系<br>第6章 · 约3分钟</span></a></div><div class="note"><strong>复习方式：</strong>先预测输出，再操作验证；最后回到自己的notebook，用一句话解释。页面答对一次不自动记作掌握，理解证据继续保存在学习记录里。</div></section><section class="chapter-section" id="sources"><header class="section-head"><h2>教材与使用说明</h2><small>有出处，便于回看</small></header><p>首要来源是<a href="../materials/深度学习入门：基于Python的理论与实现 (斋藤康毅).pdf#page=26">本地教材PDF</a>。本文的“书内页码”指印在书页上的数字；PDF阅读器页码比它多25。上方每张卡片都链接到相应教材页和本地代码。</p><p>原有<a href="../notes/斋藤-深度学习入门/00-学习导航.md">Markdown笔记</a>保留完整的复习说明。已完成第5章首轮学习并自行运行反向传播训练。第五章的公式、笔记与短练习已接入，第六章已完成，超参数部分按用户选择只阅读；阅读与运行进度、独立理解证据分别保存。</p><p>分享或移动时，将本仓库中的reference、lessons、assets一起保留；教材和代码链接需要保留原有相对位置。打印按钮会展开参考答案，便于纸上回查。</p></section><footer class="footer">斋藤康毅《深度学习入门：基于Python的理论与实现》 · 第1—6章 · 2026-11-06<br>公式以教材为准；代码链接对应本仓库。把不清楚的卡片标题或练习结果发给AI，我们继续逐小步解释。</footer></main></div></body></html>
