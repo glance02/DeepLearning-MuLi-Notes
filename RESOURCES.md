@@ -58,12 +58,22 @@
 
 - [作者MultiLayerNet定义](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/multi_layer_net.py)：在线只读核对hidden_size_list驱动的参数和层生成、初始化选择、权值衰减与前后向；用户已自己手敲固定ReLU、He和one-hot接口的最小版。可核对封装思路，不要求补完作者所有功能，也不下载整套源码。
 
-### 2026-11-03阶段整理：第六章尚未完成
+### 2026-11-06：第六章总结
 
-- [第六章阶段笔记](notes/斋藤-深度学习入门/06-与学习相关的技巧.md)与[HTML入口](reference/chapter6.html)：整理至6.4.1，下一小节权值衰减待学。
+- [第六章完整笔记](notes/斋藤-深度学习入门/06-与学习相关的技巧.md)与[HTML总结](reference/chapter6.html)：第六章已完成，覆盖6.1—6.6；超参数部分按用户安排只阅读、不敲代码。
 - [MultiLayerNet完整梳理](reference/multi-layer-net.html)：按用户当前源码解释层宽、共享参数、方法调用和优化器更新；复用assets/network-lab.js的维度追踪，不运行浏览器训练。
 - 短课[12：参数与层](lessons/0012-multilayernet-parameters.html)、[13：一次更新](lessons/0013-multilayernet-training.html)：两个单独的小目标，每次按需选一项。
 - [本次过拟合图](assets/chapter6-overfitting.png)与[当前ReLU/Xavier图](assets/chapter6-activation.png)：直接从Notebook保存输出提取，不重新训练，不把图像读数当作精确最终指标。
+- [L2曲线](assets/chapter6-weight-decay.png)与[Dropout曲线](assets/chapter6-dropout.png)：新增保存输出的提取图，最后打印结果分别为train92.00%/test73.55%与train79.67%/test62.98%。
+- 本轮对照本地教材PDF209—225补齐BN、正则化、验证集与随机搜索，7.1整体结构位于PDF226起。
+- [教材超参数搜索脚本](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch06/hyperparameter_optimization.py)：核对同步打乱、分割验证集、按对数尺度采样学习率和λ、按验证结果排序；只作回查，不安排补写实验。
+
+### 第6.4.3节：Dropout
+
+- [作者Dropout层](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/layers.py#L89-L105)：已核对训练mask、反向复用mask、评价时乘保留比例的教材约定。
+- [作者扩展网络](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/multi_layer_net_extend.py)：已核对隐藏层激活后插入Dropout、gradient开启训练模式、accuracy关闭随机丢弃。
+- [作者Dropout实验](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch06/overfit_dropout.py)：ratio=0.2、6个100隐藏节点层、SGD学习率0.01与301轮配置；本项目继续使用原有评价记录时机，用户运行后的曲线已归入笔记。
+- [Dropout速查](reference/dropout.html)与[短课14](lessons/0014-dropout-mask.html)：与Notebook最后一格衔接，先预测固定mask的输出和反向梯度；页面反馈不作为掌握证据自动记录。
 
 ## Wisdom (Communities)
 

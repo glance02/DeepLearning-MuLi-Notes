@@ -3,7 +3,7 @@
 <title>把 MultiLayerNet 连起来 · 代码手边册</title><link rel="stylesheet" href="../assets/teach.css"><link rel="stylesheet" href="../assets/code-highlight.css"><link rel="stylesheet" href="../assets/network-lab.css"><script src="../assets/teach.js" defer></script><script src="../assets/vendor/highlight/highlight.min.js" defer></script><script src="../assets/code-highlight.js" defer></script><script src="../assets/network-lab.js" defer></script></head>
 <body><div class="layout"><aside class="sidebar"><a class="brand" href="chapter6.html"><small>YOUR CODE / MULTILAYERNET</small>从层宽列表，到一次更新</a>
 <nav class="side-links" aria-label="本页导航"><a href="#map">先看整体</a><a href="#parameters">① 创建参数</a><a href="#layers">② 组装层</a><a href="#methods">③ 方法各做什么</a><a href="#backward">④ 反向传播</a><a href="#update">⑤ SGD更新参数</a><a href="#actual">与今日实验对应</a><a href="#source">完整源码对照</a><a href="chapter6.html">第六章学习入口</a></nav><button class="secondary print-button" data-print type="button">打印当前页</button></aside>
-<main class="main reading"><header class="hero"><p class="eyebrow">REFERENCE / CH 6 · 2026.11.03</p><h1>把 MultiLayerNet 连起来。</h1><p class="lead">先用你已经跑通的 4 → 3 → 5 → 2 小网络，读懂参数、层对象与方法的关系，再对应书中的七层网络。</p><div class="meta"><span>当前基础版 · ReLU + He</span><a href="../mycode/common/multi_layer_net.py">自己的源码</a><a href="../notes/斋藤-深度学习入门/06-与学习相关的技巧.md">第六章笔记 · 进行中</a></div></header>
+<main class="main reading"><header class="hero"><p class="eyebrow">REFERENCE / CH 6 · 2026.11.03</p><h1>把 MultiLayerNet 连起来。</h1><p class="lead">先用你已经跑通的 4 → 3 → 5 → 2 小网络，读懂参数、层对象与方法的关系，再对应书中的七层网络。</p><div class="meta"><span>当前基础版 · ReLU + He</span><a href="../mycode/common/multi_layer_net.py">自己的源码</a><a href="../notes/斋藤-深度学习入门/06-与学习相关的技巧.md">第六章完整笔记</a></div></header>
 <div class="goal"><strong>回查目标</strong>能指着一组 W、b 说明：在哪创建，交给哪个层，梯度存在哪里，最后由谁更新。</div>
 <section id="map"><h2>同一个网络，三个角度</h2><div class="table-wrap"><table><thead><tr><th>位置</th><th>装的是什么</th><th>例子</th></tr></thead><tbody>
 <tr><td><code>self.params</code></td><td>真正要学习的权重和偏置数组</td><td>W1、b1、W2、b2、W3、b3</td></tr>
@@ -83,7 +83,7 @@ params[key] -= self.lr * grads[key]</code></pre>
 )</code></pre>
 <p>列表有6个100，所以是6个隐藏层，再加1个输出层，共7个有权重层。W1是(784,100)，W2到W6是(100,100)，W7是(100,10)。总计130010个可学习参数。</p>
 <p>今日实验只保留300个训练样本，batch=100，SGD学习率0.01。网络较深而数据较少，用来观察过拟合。训练与绘图代码在 <a href="../mycode/chapter6.ipynb">chapter6.ipynb</a>，损失层与三个基础层在 <a href="../mycode/common/layers.py">layers.py</a>，普通数学函数在 <a href="../mycode/common/functions.py">functions.py</a>。</p>
-<p>基础版已支持当前6.4.1实验。BatchNorm、权值衰减和Dropout没有加入这个类；后续跟教材学到时再补。你今天明确表示本文件还有不懂的部分，所以“接口跑通”保留为实践进度，不记成已独立掌握。</p></section>
+<p>这个基础类用于6.4.1实验；L2与Dropout扩展已写在Notebook中的子类里，BN部分以阅读为主。复习时可沿着参数、层对象、梯度与更新的顺序回查。</p></section>
 <section id="source"><h2>当前源码快照</h2><p>对照2026-11-03保存的文件。上面的解释按这份最小实现展开；以后源码变化时可回到<a href="../mycode/common/multi_layer_net.py">实时文件</a>核对。</p><details><summary>展开完整源码，逐段对照</summary><pre class="net-source"><code class="language-python">from collections import OrderedDict
 
 import numpy as np
@@ -168,5 +168,5 @@ class MultiLayerNet:
             grads[&quot;b&quot; + str(i)] = self.layers[&quot;Affine&quot; + str(i)].db
 
         return grads</code></pre></details></section>
-<section><h2>下次先选一个小点</h2><div class="lesson-cards"><a class="lesson-card" href="../lessons/0012-multilayernet-parameters.html"><strong>参数与层对象怎样对应</strong><span>从列表推W/b形状，解释同一份数组 · 约3分钟</span></a><a class="lesson-card" href="../lessons/0013-multilayernet-training.html"><strong>从得分走到一次更新</strong><span>区分loss、gradient和SGD · 约3分钟</span></a></div><p>每次只做一个。把你卡住的那一行、你自己的解释或练习结果发给我，我们仍按教材主线逐小步继续。</p></section>
-<nav class="lesson-nav"><a href="chapter6.html">← 第六章进行中</a><a href="chapter5.html">回顾第五章 →</a></nav><footer class="footer">2026-11-03 · 以自己的最小实现为主；页面自测不会自动写入掌握记录。</footer></main></div></body></html>
+<section><h2>按需复习一个小点</h2><div class="lesson-cards"><a class="lesson-card" href="../lessons/0012-multilayernet-parameters.html"><strong>参数与层对象怎样对应</strong><span>从列表推W/b形状，解释同一份数组 · 约3分钟</span></a><a class="lesson-card" href="../lessons/0013-multilayernet-training.html"><strong>从得分走到一次更新</strong><span>区分loss、gradient和SGD · 约3分钟</span></a></div><p>每次只做一个。把你卡住的那一行、你自己的解释或练习结果发给我，我们仍按教材主线逐小步继续。</p></section>
+<nav class="lesson-nav"><a href="chapter6.html">← 第六章总结</a><a href="chapter5.html">回顾第五章 →</a></nav><footer class="footer">2026-11-03 · 以自己的最小实现为主；页面自测不会自动写入掌握记录。</footer></main></div></body></html>

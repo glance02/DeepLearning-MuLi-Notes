@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Dropout · 代码速查</title><link rel="stylesheet" href="../assets/teach.css"><link rel="stylesheet" href="../assets/code-highlight.css"><script src="../assets/teach.js" defer></script><script src="../assets/vendor/highlight/highlight.min.js" defer></script><script src="../assets/code-highlight.js" defer></script></head>
+<body><div class="layout"><aside class="sidebar"><a class="brand" href="chapter6.html"><small>CHAPTER 06 / 6.4.3</small>Dropout速查</a><nav class="side-links"><a href="#code">层的实现</a><a href="#mode">接入与模式</a><a href="#plot">读图提醒</a><a href="../lessons/0014-dropout-mask.html">3分钟短练习</a></nav><button type="button" class="secondary print-button" data-print>打印当前页</button></aside>
+<main class="main reading"><header class="hero"><p class="eyebrow">NUMPY / TEXTBOOK CONVENTION</p><h1>随机屏蔽，保留形状。</h1><p class="lead">完整可运行代码在chapter6.ipynb的Dropout单元格；这里保留关键机制。</p></header>
+<section id="code"><h2>Dropout层</h2><pre><code class="language-python">class Dropout:
+    def __init__(self, dropout_ratio=0.5):
+        self.dropout_ratio = dropout_ratio
+        self.mask = None
+
+    def forward(self, x, train_flg=True):
+        if train_flg:
+            self.mask = np.random.rand(*x.shape) &gt; self.dropout_ratio
+            return x * self.mask
+        return x * (1.0 - self.dropout_ratio)
+
+    def backward(self, dout):
+        return dout * self.mask</code></pre><p><code>dropout_ratio</code>是丢弃概率，0.2表示每个位置约有20%的概率被屏蔽，不保证每批恰好20%。<code>np.random.rand(*x.shape)</code>生成与输入同形的随机数组，mask为布尔数组；backward必须复用本轮前向的mask。<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/layers.py#L89-L105">教材层源码</a></p></section>
+<section id="mode"><h2>训练与评价</h2><div class="table-wrap"><table><thead><tr><th>调用</th><th>本项目行为</th></tr></thead><tbody><tr><td>gradient(x,t)</td><td>父类调用子类loss，默认train_flg=True；产生mask后立即反向。</td></tr><tr><td>predict(x)</td><td>默认train_flg=False；不随机屏蔽，逐个Dropout层乘保留比例。</td></tr><tr><td>accuracy(x,t)</td><td>复用父类，经predict默认走评价模式，训练集和测试集都一样。</td></tr></tbody></table></div><p>本项目子类在每个隐藏层的ReLU后插入Dropout，输出层不添加。顺序为<code>Affine → ReLU → Dropout → … → Affine</code>，反向倒序通过这些层。权重数组没有被随机删除或重新初始化。</p><p>这里的loss默认训练模式是为了配合现有父类gradient；作者扩展类则在gradient中显式传入train_flg=True。<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/multi_layer_net_extend.py">接入方式对照</a></p><div class="note">采用教材的普通Dropout：训练时不除以保留比例，评价时乘保留比例。不要与inverted dropout的缩放位置混用。</div></section>
+<section id="plot"><h2>读图与当前进度</h2><p>新实验仅使用Dropout，丢弃比例0.2、301个评价点、SGD学习率0.01，不叠加L2。配置参考<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch06/overfit_dropout.py">教材实验</a>，循环沿用前两格的记录时机；300训练样本、batch100时共有901次更新，第一个评价点在第一次更新之后。</p><p>比较train和test的差距，也看test本身是否改善。之前用户提供的L2图约为train92%、test74%，无正则化图约为train100%、test75%；差距缩小不等于测试准确率提高。两次初始化不同，Dropout实验时长也不同，不据此作严格因果比较。</p><p>Notebook已保存用户运行后的实验输出，最后为train79.67%、test62.98%，曲线末段仍在上升。图与读图说明已归入<a href="chapter6.html#dropout">第六章总结</a>。可按需查看<a href="../lessons/0014-dropout-mask.html">短课14</a>，随时把卡住的那一行发给我。</p></section>
+<nav class="lesson-nav"><a href="chapter6.html">← 第六章入口</a><a href="../mycode/chapter6.ipynb">自己的Notebook →</a></nav><footer class="footer">2026-11-06 · 与现有固定ReLU、He初始化、one-hot接口的基础网络衔接。</footer></main></div></body></html>
