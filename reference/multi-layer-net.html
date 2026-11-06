@@ -3,14 +3,14 @@
 <title>把 MultiLayerNet 连起来 · 代码手边册</title><link rel="stylesheet" href="../assets/teach.css"><link rel="stylesheet" href="../assets/code-highlight.css"><link rel="stylesheet" href="../assets/network-lab.css"><script src="../assets/teach.js" defer></script><script src="../assets/vendor/highlight/highlight.min.js" defer></script><script src="../assets/code-highlight.js" defer></script><script src="../assets/network-lab.js" defer></script></head>
 <body><div class="layout"><aside class="sidebar"><a class="brand" href="chapter6.html"><small>YOUR CODE / MULTILAYERNET</small>从层宽列表，到一次更新</a>
 <nav class="side-links" aria-label="本页导航"><a href="#map">先看整体</a><a href="#parameters">① 创建参数</a><a href="#layers">② 组装层</a><a href="#methods">③ 方法各做什么</a><a href="#backward">④ 反向传播</a><a href="#update">⑤ SGD更新参数</a><a href="#actual">与今日实验对应</a><a href="#source">完整源码对照</a><a href="chapter6.html">第六章学习入口</a></nav><button class="secondary print-button" data-print type="button">打印当前页</button></aside>
-<main class="main reading"><header class="hero"><p class="eyebrow">REFERENCE / CH 6 · 2026.11.03</p><h1>把 MultiLayerNet 连起来。</h1><p class="lead">先用你已经跑通的 4 → 3 → 5 → 2 小网络，读懂参数、层对象与方法的关系，再对应书中的七层网络。</p><div class="meta"><span>当前基础版 · ReLU + He</span><a href="../mycode/common/multi_layer_net.py">自己的源码</a><a href="../notes/斋藤-深度学习入门/06-与学习相关的技巧.md">第六章完整笔记</a></div></header>
+<main class="main reading"><header class="hero"><p class="eyebrow">REFERENCE / CH 6 · 2026.11.03</p><h1>MultiLayerNet的结构与实现</h1><p class="lead">先用你已经跑通的 4 → 3 → 5 → 2 小网络，读懂参数、层对象与方法的关系，再对应书中的七层网络。</p><div class="meta"><span>当前基础版 · ReLU + He</span><a href="../mycode/common/multi_layer_net.py">自己的源码</a><a href="../notes/斋藤-深度学习入门/06-与学习相关的技巧.md">第六章完整笔记</a></div></header>
 <div class="goal"><strong>回查目标</strong>能指着一组 W、b 说明：在哪创建，交给哪个层，梯度存在哪里，最后由谁更新。</div>
-<section id="map"><h2>同一个网络，三个角度</h2><div class="table-wrap"><table><thead><tr><th>位置</th><th>装的是什么</th><th>例子</th></tr></thead><tbody>
+<section id="map"><h2>网络结构</h2><div class="table-wrap"><table><thead><tr><th>位置</th><th>装的是什么</th><th>例子</th></tr></thead><tbody>
 <tr><td><code>self.params</code></td><td>真正要学习的权重和偏置数组</td><td>W1、b1、W2、b2、W3、b3</td></tr>
 <tr><td><code>self.layers</code></td><td>按顺序执行计算的层对象</td><td>Affine1、Relu1、Affine2、Relu2、Affine3</td></tr>
 <tr><td><code>self.last_layer</code></td><td>把得分与标签合成损失的对象</td><td>SoftmaxWithLoss，单独保存</td></tr></tbody></table></div>
 <p>你原来写的 TwoLayerNet 固定一个隐藏层。这里把层数交给列表决定；Affine、Relu 和损失层的计算原理继续复用第五章。</p>
-<div class="lab" data-network-lab><div class="lab-header"><h3>点开一个方法，追踪同一组参数</h3><span class="tag">形状与调用示意</span></div>
+<div class="lab" data-network-lab><div class="lab-header"><h3>方法调用与参数关系</h3><span class="tag">形状与调用示意</span></div>
 <div class="net-controls"><label>选择网络<select data-network-preset aria-label="选择网络结构"><option value="small">小测试：4 → 3 → 5 → 2，6个样本</option><option value="mnist">书中实验：784 → 六个100 → 10，100个样本</option></select></label></div>
 <p data-network-shape>层宽列表 [4, 3, 5, 2] · 批量 N=6</p><div class="net-map" data-network-map><div class="net-node"><strong>Affine1 + Relu1</strong><span>(6,4) → (6,3)</span></div><div class="net-node"><strong>Affine2 + Relu2</strong><span>(6,3) → (6,5)</span></div><div class="net-node output"><strong>Affine3 / 输出层</strong><span>(6,5) → (6,2)</span></div></div>
 <p class="net-stat" data-network-stats>2个隐藏层 · 3组W/b · 47个参数</p>
@@ -18,7 +18,7 @@
 <div class="net-methods" role="group" aria-label="选择要追踪的方法"><button type="button" data-network-stage="init" aria-pressed="true">__init__</button><button type="button" data-network-stage="predict" aria-pressed="false">predict</button><button type="button" data-network-stage="loss" aria-pressed="false">loss</button><button type="button" data-network-stage="accuracy" aria-pressed="false">accuracy</button><button type="button" data-network-stage="gradient" aria-pressed="false">gradient</button><button type="button" data-network-stage="update" aria-pressed="false">SGD.update</button></div>
 <div class="net-call" aria-live="polite"><h3 data-call-title>__init__：创建参数与层对象</h3><p data-call-flow>params 保存参数，layers 保存使用这些参数的层对象。</p><pre><code data-call-code class="language-python">all_size_list = [input_size] + hidden_size_list + [output_size]</code></pre><p data-call-effect>构造时初始化参数，后续调用沿着同一组参数计算。</p></div><p class="caption">这里追踪维度与代码顺序；你的 Python 实验仍在 Notebook 中运行。下方各节可直接离线回查。</p></div>
 <p class="source">依据<a href="../mycode/common/multi_layer_net.py">当前MultiLayerNet</a>与<a href="../mycode/common/layers.py">自己写的三个层</a>；教材多层封装可对照<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/multi_layer_net.py">作者类定义</a>，无需下载源码。</p></section>
-<section id="parameters"><h2>① 层宽列表决定所有参数的形状</h2><pre><code class="language-python">all_size_list = [input_size] + hidden_size_list + [output_size]
+<section id="parameters"><h2>参数初始化与形状</h2><pre><code class="language-python">all_size_list = [input_size] + hidden_size_list + [output_size]
 # 例：输入4个、隐藏层[3,5]、输出2个，先各自组成列表再拼接：
 # [4] + [3, 5] + [2] → [4, 3, 5, 2]
 
@@ -33,7 +33,7 @@ for i in range(1, len(all_size_list)):
 <p>两个隐藏层意味着三个 Affine 层，所以参数循环包含输出层。<code>range(1,4)</code> 产生1、2、3，不包含4。</p>
 <div class="note">初始化循环中的每一轮对应一个不同的层，只在构造网络时运行。训练循环反复更新已有参数，不会每次重新随机生成权重。这一点你已主动从激活值实验中识别出来。</div>
 <p class="source">He尺度对应<a href="../materials/深度学习入门：基于Python的理论与实现 (斋藤康毅).pdf#page=206">教材6.2.3</a>；当前源码的默认实现固定使用该尺度。</p></section>
-<section id="layers"><h2>② 参数数组交给会计算的层对象</h2><pre><code class="language-python">self.layers["Affine" + str(i)] = Affine(
+<section id="layers"><h2>层对象与共享参数</h2><pre><code class="language-python">self.layers["Affine" + str(i)] = Affine(
     self.params["W" + str(i)], self.params["b" + str(i)]
 )
 self.layers["Relu" + str(i)] = Relu()</code></pre>
@@ -44,13 +44,13 @@ self.layers["Relu" + str(i)] = Relu()</code></pre>
 <p><code>OrderedDict</code> 按添加顺序保留计算次序。隐藏层循环每次添加 Affine 与 Relu；最后再单独添加一个 Affine 输出层。这个输出层后不接 ReLU，保留正负类别得分，随后计算损失时交给 SoftmaxWithLoss。</p>
 <p><code>last_layer</code> 单独放置，因为它的 forward 还要接收标签 t；普通 predict 只接收 x，不需要标签。</p>
 <p class="source">依赖实现：<a href="../mycode/common/layers.py">Affine、Relu、SoftmaxWithLoss</a>；相关矩阵公式见<a href="affine-backward.html">Affine速查</a>。</p></section>
-<section id="methods"><h2>③ 四个方法，各自返回什么</h2><div class="table-wrap"><table class="net-method-table"><thead><tr><th>方法</th><th>输入</th><th>返回</th><th>会更新W/b吗</th></tr></thead><tbody>
+<section id="methods"><h2>网络方法与返回值</h2><div class="table-wrap"><table class="net-method-table"><thead><tr><th>方法</th><th>输入</th><th>返回</th><th>会更新W/b吗</th></tr></thead><tbody>
 <tr><td>predict(x)</td><td>x: (N,4)</td><td>得分: (N,2)</td><td>不会</td></tr><tr><td>loss(x,t)</td><td>x与(N,2)的one-hot标签</td><td>一个损失数值</td><td>不会</td></tr><tr><td>accuracy(x,t)</td><td>x与one-hot标签</td><td>0到1的正确比例</td><td>不会</td></tr><tr><td>gradient(x,t)</td><td>同一批x、t</td><td>与params同键、同形的梯度字典</td><td>不会</td></tr></tbody></table></div>
 <p>表中使用小网络的4输入、2输出。预测返回的得分可以为负：你已经实际得到过6×2的得分数组。loss 调用损失层，其中会做 softmax 和交叉熵；accuracy 则把每行最大得分的下标作为类别编号，再与标签比较。</p>
 <p>predict、loss 等会保存或刷新层的中间缓存；“不更新参数”不等于对象内部什么都没变。缓存用于后续反向计算。</p>
 <div class="note"><strong>当前标签约定：</strong>你的 accuracy 和 SoftmaxWithLoss.backward 都按 one-hot 使用标签。读取MNIST时保留 <code>one_hot_label=True</code>。这是当前最小版的接口，和作者通用版本的标签兼容范围不同。</div>
 <p class="source">按你当前<a href="../mycode/common/multi_layer_net.py">三个方法</a>与<a href="../mycode/common/layers.py">损失层backward</a>解释；最大值下标可回顾<a href="index.html#argmax">argmax卡片</a>。</p></section>
-<section id="backward"><h2>④ gradient 先走到损失，再倒着回来</h2><pre><code class="language-python">self.loss(x, t)
+<section id="backward"><h2>梯度计算</h2><pre><code class="language-python">self.loss(x, t)
 dout = self.last_layer.backward(1)
 
 layers = list(self.layers.values())
@@ -67,7 +67,7 @@ return grads</code></pre>
 <p>第二个循环只是收集已算好的参数梯度。隐藏层有2层，<code>range(1,2+2)</code> 取1、2、3，把最后的输出层也收集进去。</p>
 <div class="formula">dW = Xᵀ dout，db = 沿样本轴求和，dx = dout Wᵀ</div>
 <p>因此 grads["W2"] 与 params["W2"] 都是(3,5)，但前者是损失对权重的梯度，后者是权重数值本身。</p><p class="source">衔接<a href="../lessons/0009-backprop-review.html">第五章反向流程</a>与<a href="affine-backward.html">Affine反向公式</a>。</p></section>
-<section id="update"><h2>⑤ 真正的参数更新在优化器里</h2><pre><code class="language-python"># network、optimizer 在训练循环外创建
+<section id="update"><h2>参数更新</h2><pre><code class="language-python"># network、optimizer 在训练循环外创建
 grads = network.gradient(x_batch, t_batch)
 optimizer.update(network.params, grads)
 
@@ -76,7 +76,7 @@ params[key] -= self.lr * grads[key]</code></pre>
 <p>SGD 用梯度决定参数该怎样改变。这里的 <code>-=</code> 原地修改参数数组，所以 Affine 持有的同一份 W、b 也变了。下一次 predict 就使用新参数。</p>
 <div class="flow"><span>固定本批x、t</span><b>→</b><span>loss + backward</span><b>→</b><span>grads</span><b>→</b><span>SGD更新W/b</span><b>→</b><span>下一批</span></div>
 <p>每轮输入样本可能变化；普通训练里，输入图片本身不由优化器更新。可学习参数包括 W 与 b。</p></section>
-<section id="actual"><h2>把小网络换回今天的书中实验</h2><pre><code class="language-python">network = MultiLayerNet(
+<section id="actual"><h2>多层网络实验</h2><pre><code class="language-python">network = MultiLayerNet(
     input_size=784,
     hidden_size_list=[100, 100, 100, 100, 100, 100],
     output_size=10
@@ -84,7 +84,7 @@ params[key] -= self.lr * grads[key]</code></pre>
 <p>列表有6个100，所以是6个隐藏层，再加1个输出层，共7个有权重层。W1是(784,100)，W2到W6是(100,100)，W7是(100,10)。总计130010个可学习参数。</p>
 <p>今日实验只保留300个训练样本，batch=100，SGD学习率0.01。网络较深而数据较少，用来观察过拟合。训练与绘图代码在 <a href="../mycode/chapter6.ipynb">chapter6.ipynb</a>，损失层与三个基础层在 <a href="../mycode/common/layers.py">layers.py</a>，普通数学函数在 <a href="../mycode/common/functions.py">functions.py</a>。</p>
 <p>这个基础类用于6.4.1实验；L2与Dropout扩展已写在Notebook中的子类里，BN部分以阅读为主。复习时可沿着参数、层对象、梯度与更新的顺序回查。</p></section>
-<section id="source"><h2>当前源码快照</h2><p>对照2026-11-03保存的文件。上面的解释按这份最小实现展开；以后源码变化时可回到<a href="../mycode/common/multi_layer_net.py">实时文件</a>核对。</p><details><summary>展开完整源码，逐段对照</summary><pre class="net-source"><code class="language-python">from collections import OrderedDict
+<section id="source"><h2>源码对照</h2><p>对照2026-11-03保存的文件。上面的解释按这份最小实现展开；以后源码变化时可回到<a href="../mycode/common/multi_layer_net.py">实时文件</a>核对。</p><details><summary>展开完整源码，逐段对照</summary><pre class="net-source"><code class="language-python">from collections import OrderedDict
 
 import numpy as np
 
@@ -168,5 +168,5 @@ class MultiLayerNet:
             grads[&quot;b&quot; + str(i)] = self.layers[&quot;Affine&quot; + str(i)].db
 
         return grads</code></pre></details></section>
-<section><h2>按需复习一个小点</h2><div class="lesson-cards"><a class="lesson-card" href="../lessons/0012-multilayernet-parameters.html"><strong>参数与层对象怎样对应</strong><span>从列表推W/b形状，解释同一份数组 · 约3分钟</span></a><a class="lesson-card" href="../lessons/0013-multilayernet-training.html"><strong>从得分走到一次更新</strong><span>区分loss、gradient和SGD · 约3分钟</span></a></div><p>每次只做一个。把你卡住的那一行、你自己的解释或练习结果发给我，我们仍按教材主线逐小步继续。</p></section>
+<section><h2>复习资料</h2><div class="lesson-cards"><a class="lesson-card" href="../lessons/0012-multilayernet-parameters.html"><strong>参数与层对象怎样对应</strong><span>从列表推W/b形状，解释同一份数组 · 约3分钟</span></a><a class="lesson-card" href="../lessons/0013-multilayernet-training.html"><strong>从得分走到一次更新</strong><span>区分loss、gradient和SGD · 约3分钟</span></a></div><p>每次只做一个。把你卡住的那一行、你自己的解释或练习结果发给我，我们仍按教材主线逐小步继续。</p></section>
 <nav class="lesson-nav"><a href="chapter6.html">← 第六章总结</a><a href="chapter5.html">回顾第五章 →</a></nav><footer class="footer">2026-11-03 · 以自己的最小实现为主；页面自测不会自动写入掌握记录。</footer></main></div></body></html>

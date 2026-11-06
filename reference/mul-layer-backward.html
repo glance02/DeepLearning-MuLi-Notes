@@ -3,7 +3,7 @@
 <title>MulLayer.backward 速查</title><link rel="stylesheet" href="../assets/teach.css"><script src="../assets/teach.js" defer></script></head>
 <body><main class="main reading">
 <header class="hero"><p class="eyebrow">REFERENCE / CH 5</p><h1>MulLayer.backward 速查</h1><p class="lead">标量乘法节点：out = x × y；最终标量结果为 L。</p></header>
-<section id="rule"><h2>传入一份导数，返回两份导数</h2>
+<section id="rule"><h2>乘法层的反向传播</h2>
 <div class="table-wrap"><table><thead><tr><th>变量</th><th>含义</th><th>计算</th></tr></thead><tbody>
 <tr><td>dout</td><td>∂L/∂out</td><td>后续反向过程传入</td></tr>
 <tr><td>dx</td><td>∂L/∂x</td><td>dout × self.y</td></tr>

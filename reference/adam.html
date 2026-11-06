@@ -20,7 +20,7 @@
 <div class="formula">θₜ = θₜ₋₁ − α m̂ₜ / (√v̂ₜ + ε)</div>
 <p>β=0.9 表示旧平均占0.9，新观测占0.1；不是取最近九次的简单平均。零初始化会使早期的历史估计偏小，校正因子用于抵消这种初始化影响。这里的“偏差”与网络偏置 b 是两个概念。</p>
 <p class="source">公式与参数默认值依据<a href="https://arxiv.org/pdf/1412.6980#page=2">Adam 原论文 Algorithm 1，第2页</a>；偏差校正见第3节。本文代码按公式直接编写，不依赖教材作者的源码。</p></section>
-<section id="code"><h2>可手敲的完整类</h2>
+<section id="code"><h2>Adam实现</h2>
 <pre><code id="adam-code" class="language-python">import numpy as np
 
 
