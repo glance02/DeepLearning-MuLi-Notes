@@ -75,6 +75,20 @@
 - [作者Dropout实验](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch06/overfit_dropout.py)：ratio=0.2、6个100隐藏节点层、SGD学习率0.01与301轮配置；本项目继续使用原有评价记录时机，用户运行后的曲线已归入笔记。
 - [Dropout速查](reference/dropout.html)与[短课14](lessons/0014-dropout-mask.html)：与Notebook最后一格衔接，先预测固定mask的输出和反向梯度；页面反馈不作为掌握证据自动记录。
 
+### 第7章：卷积神经网络
+
+- [主教材第7章7.1](<materials/深度学习入门：基于Python的理论与实现 (斋藤康毅).pdf#page=226>)：图7-1、图7-2对照全连接网络与CNN的整体层顺序；先读本节，再进入7.2卷积层。
+- [第七章速查](reference/chapter7.html)、[短课15：CNN整体结构](lessons/0015-cnn-overview.html)与[短课16：池化窗口的形状](lessons/0016-pooling-window-reshape.html)：从7.1层顺序推进到7.4.4的 `im2col` 窗口分组。
+- [自己的第七章Notebook](mycode/chapter7.ipynb)：用于跟随教材做阅读记录与后续代码练习。
+
+### 第7.4—7.5节：层实现与CNN训练（2026-11-12）
+
+- [作者层实现](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/layers.py)：核对卷积缓存与矩阵反向、池化arg_max路由以及Affine展平/恢复形状。
+- [作者窗口工具](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/util.py)：核对im2col的排列和col2im的重叠累加。
+- [作者SimpleConvNet](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch07/simple_convnet.py)：核对层组装和六组参数梯度收集。
+- [作者训练脚本](https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch07/train_convnet.py)：Adam lr0.001、20轮、batch100、每轮评价样本数1000；与自己的SGD全量评价实验区分。
+- [第七章完整笔记](notes/斋藤-深度学习入门/07-卷积神经网络.md)、[速查](reference/chapter7.html)和[epoch短课](lessons/0017-cnn-epoch-updates.html)：串联形状、反向传播、训练循环与用户报告的首轮结果；当前止于7.5。
+
 ## Wisdom (Communities)
 
 当前需求是本地教材复习与代码辅导，暂不扩展社区资源。

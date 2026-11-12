@@ -211,3 +211,7 @@
 <a href="https://github.com/120L031815"> <img src="./imgs/profile/RuiChen_Yi.png"  width="80" /></a>
 <a href="https://github.com/Chigland"> <img src="./imgs/profile/ZhiTao_Wang.png"  width="80" /></a> 
 
+
+### 第七章CNN学习记录
+
+2026-11-12读到7.5：[第七章笔记](notes/斋藤-深度学习入门/07-卷积神经网络.md) · [CNN速查](reference/chapter7.html) · [epoch与参数更新短复习](lessons/0017-cnn-epoch-updates.html)。已运行首轮训练，后续结果待确认。

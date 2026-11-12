@@ -25,14 +25,18 @@ class Affine:
     def __init__(self, W, b):
         self.W = W
         self.b = b
+
         self.x = None
+        self.original_x_shape = None
         self.dW = None
         self.db = None
 
     def forward(self, x):
-        self.x = x
-        out = np.dot(x, self.W) + self.b
+        # 保存原形状，再把每个样本展开成一行
+        self.original_x_shape = x.shape
+        self.x = x.reshape(x.shape[0], -1)
 
+        out = np.dot(self.x, self.W) + self.b
         return out
 
     def backward(self, dout):
@@ -40,8 +44,9 @@ class Affine:
         self.dW = np.dot(self.x.T, dout)
         self.db = np.sum(dout, axis=0)
 
+        # 恢复传入这一层时的形状
+        dx = dx.reshape(self.original_x_shape)
         return dx
-
 
 # Softmax-with-Loss 层的实现
 class SoftmaxWithLoss:

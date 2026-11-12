@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="第七章首课：识别卷积神经网络的整体层顺序，并与全连接网络对照。">
+<title>短课15：CNN整体结构</title>
+<link rel="stylesheet" href="../assets/teach.css">
+<script src="../assets/teach.js" defer></script>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+<a class="brand" href="../reference/index.html"><small>DEEP LEARNING / CH 7</small>卷积神经网络</a>
+<nav class="side-links" aria-label="本课目录"><a href="#target">本课目标</a><a href="#structure">层顺序</a><a href="#recall">回忆检查</a><a href="#reading">教材阅读</a></nav>
+<button class="secondary print-button" data-print type="button">打印当前页</button>
+</aside>
+<main class="main reading">
+<header class="hero">
+<p class="eyebrow">LESSON 0015 / CHAPTER 7</p>
+<h1>CNN整体结构</h1>
+<p class="lead">用一条层顺序，辨认卷积神经网络怎样从图像特征走到分类结果。</p>
+<div class="meta"><span>约 3 分钟</span><span>教材 7.1 · PDF 第226—228页</span><a href="../mycode/chapter7.ipynb">自己的 Notebook</a></div>
+</header>
+<div class="goal" id="target"><strong>本课目标</strong>看见网络结构时，能指出卷积模块主要在前段，分类用的全连接层仍在输出附近。</div>
+<section id="structure">
+<h2>从图像到类别</h2>
+<p>全连接网络常见的层顺序是 <code>Affine → ReLU</code> 重复若干次，再接 <code>Affine → Softmax</code>。第七章的 CNN 在前段引入卷积层和池化层：</p>
+<div class="flow" aria-label="卷积神经网络的典型层顺序">
+<span>Conv</span><b>→</b><span>ReLU</span><b>→</b><span>Pooling（可省略）</span><b>→</b><span>Conv</span><b>→</b><span>ReLU</span><b>→</b><span>Pooling（可省略）</span><b>→</b><span>Conv-ReLU</span><b>→</b><span>Affine-ReLU</span><b>→</b><span>Affine-Softmax</span>
+</div>
+<p>因此可以先记住：前段用 <code>Convolution-ReLU-(Pooling)</code> 逐步处理图像；靠近输出时仍可用熟悉的 <code>Affine-ReLU</code>，最后由 <code>Affine-Softmax</code> 给出类别概率。括号表示池化层可能省略。</p>
+<div class="note"><strong>本课边界</strong>这里只辨认结构。卷积窗口如何移动、输出尺寸怎样计算，留到 7.2 再学。</div>
+</section>
+<section id="recall">
+<h2>先回忆，再核对</h2>
+<form class="quiz" data-answer="a" data-explanation="CNN的前段用卷积模块处理特征；分类输出附近仍常用Affine层，最后接Softmax。">
+<fieldset><legend>下面哪句话更符合第七章 7.1 的 CNN 结构？</legend>
+<label><input type="radio" name="q1" value="a">前端卷积，末端全连接</label>
+<label><input type="radio" name="q1" value="b">前端全连接，末端卷积</label>
+</fieldset>
+<div class="buttons"><button type="submit">核对</button><button class="secondary" type="reset">重做</button></div>
+<p class="feedback" role="status" aria-live="polite"></p>
+</form>
+<p>不用追求背完整条链。先自己说出两个部分：前段新增了什么，输出附近还保留什么。把你的解释发给我，我会据此接着讲 7.2。</p>
+</section>
+<section id="reading">
+<h2>回到教材</h2>
+<p>先读 7.1，并对照图 7-1 与图 7-2：图 7-1 是全连接网络，图 7-2 是 CNN。读完后，在自己的 Notebook 留下图 7-2 的层顺序即可；本课不要求运行训练代码。</p>
+<p class="source"><a href="../materials/深度学习入门：基于Python的理论与实现 (斋藤康毅).pdf#page=226">主教材 · 第7章 7.1，书内201—202页</a><a href="../reference/chapter7.html">第七章速查</a></p>
+</section>
+<nav class="lesson-nav"><a href="../reference/chapter6.html">← 第六章总结</a><a href="../reference/chapter7.html">第七章速查 →</a></nav>
+<footer class="footer">第七章学习按教材顺序推进；本页答题结果不会自动记录为掌握。</footer>
+</main>
+</div>
+</body>
+</html>
