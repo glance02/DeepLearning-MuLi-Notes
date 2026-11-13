@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第1章：Python入门 · 深度学习手边册</title>
+<link rel="stylesheet" href="../../assets/teach.css">
+<link rel="stylesheet" href="../../assets/site-notes.css">
+<link rel="stylesheet" href="../../assets/code-highlight.css">
+<script src="../../assets/teach.js" defer></script>
+<script src="../../assets/vendor/highlight/highlight.min.js" defer></script>
+<script src="../../assets/code-highlight.js" defer></script>
+<script src="../../assets/site-math.js" defer></script>
+<script src="../../assets/vendor/mathjax/tex-svg-full.js" defer></script></head>
+<body><div class="layout"><aside class="sidebar">
+<a class="brand" href="../../reference/index.html"><small>DEEP LEARNING / NOTES</small>深度学习 · 手边册</a>
+<p class="side-label">斋藤 · 学习笔记</p><nav class="side-links" aria-label="章节导航"><a href="00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.html">《深度学习入门》学习笔记</a><a href="01-Python%E5%85%A5%E9%97%A8.html" aria-current="page">第1章：Python入门</a><a href="02-%E6%84%9F%E7%9F%A5%E6%9C%BA.html">第2章：感知机</a><a href="03-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第3章：神经网络</a><a href="04-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%9A%84%E5%AD%A6%E4%B9%A0.html">第4章：神经网络的学习</a><a href="05-%E8%AF%AF%E5%B7%AE%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%B3%95.html">第5章：误差反向传播法</a><a href="06-%E4%B8%8E%E5%AD%A6%E4%B9%A0%E7%9B%B8%E5%85%B3%E7%9A%84%E6%8A%80%E5%B7%A7.html">第6章：与学习相关的技巧</a><a href="07-%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第7章：卷积神经网络</a></nav>
+<p class="side-label">回查与练习</p><nav class="side-links">
+<a href="../../reference/index.html">公式 · 概念 · 代码</a>
+<a href="../../reference/index.html#review">交互短练习</a></nav>
+<button class="secondary print-button" data-print type="button">打印当前页</button></aside>
+<main class="main reading"><header class="hero"><p class="eyebrow">STUDY NOTES</p><h1>第1章：Python入门</h1>
+<p class="lead">斋藤康毅《深度学习入门》 · 结合自己的代码逐章回顾。</p></header>
+<details class="note-toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#第1章python入门">第1章：Python入门</a><ul>
+<li><a href="#1112开发工具">1.1—1.2：开发工具</a></li>
+<li><a href="#13基本语法">1.3：基本语法</a></li>
+<li><a href="#14函数类和实例">1.4：函数、类和实例</a></li>
+<li><a href="#15numpy-数组">1.5：NumPy 数组</a><ul>
+<li><a href="#列表与数组">列表与数组</a></li>
+<li><a href="#形状维数元素类型">形状、维数、元素类型</a></li>
+<li><a href="#广播">广播</a></li>
+<li><a href="#索引和筛选">索引和筛选</a></li>
+</ul>
+</li>
+<li><a href="#16绘图">1.6：绘图</a></li>
+<li><a href="#复习要点">复习要点</a></li>
+<li><a href="#可选自测">可选自测</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</details>
+<article class="note-content"><span id="第1章python入门" hidden>第1章：Python入门</span>
+<p><a href="00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.html">返回学习导航</a> · <a href="02-%E6%84%9F%E7%9F%A5%E6%9C%BA.html">下一章：感知机</a></p>
+<p>教材：1.1—1.7，书内1—20页（PDF 第26—45页）。对应代码：<a href="https://github.com/glance02/DeepLearning-MuLi-Notes/tree/main/mycode/%E5%85%A5%E9%97%A8">入门目录</a>。</p>
+<p>本章解决的问题：用什么工具把后面的数学计算写出来？重点是函数、类、NumPy 数组和绘图；安装部分按“已搭好环境”记录。</p>
+<h2 id="1112开发工具">1.1—1.2：开发工具</h2>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>在本书中的作用</th>
+<th>已有代码中的例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python</td>
+<td>组织程序流程、定义函数和类</td>
+<td><code>def</code>、<code>class</code>、循环</td>
+</tr>
+<tr>
+<td>NumPy</td>
+<td>数组、逐元素计算、矩阵运算</td>
+<td><code>np.array</code>、<code>np.sum</code></td>
+</tr>
+<tr>
+<td>Matplotlib</td>
+<td>观察函数、数据和实验结果</td>
+<td><code>plt.plot</code>、<code>plt.imshow</code></td>
+</tr>
+</tbody>
+</table>
+<p>教材早期的版本号和环境安装介绍是出版时的信息；复习时主要记住这些工具的分工。</p>
+<h2 id="13基本语法">1.3：基本语法</h2>
+<p>对应：<a href="../../mycode/%E5%85%A5%E9%97%A8/draft.py">draft.py</a>、<a href="../../mycode/%E5%85%A5%E9%97%A8/01.py">01.py</a>。</p>
+<table>
+<thead>
+<tr>
+<th>写法</th>
+<th>含义</th>
+<th>容易混淆的地方</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>3 ** 2</code></td>
+<td>3的平方</td>
+<td><code>^</code> 不是乘方</td>
+</tr>
+<tr>
+<td><code>7 / 5</code></td>
+<td>除法，结果为 <code>1.4</code></td>
+<td>与 <code>//</code> 的向下取整除法区分</td>
+</tr>
+<tr>
+<td><code>a[0]</code>、<code>a[-1]</code></td>
+<td>第一个、最后一个元素</td>
+<td>索引从0开始</td>
+</tr>
+<tr>
+<td><code>a[1:3]</code></td>
+<td>取索引1、2的元素</td>
+<td>包含左端，不包含右端</td>
+</tr>
+<tr>
+<td><code>me['height']</code></td>
+<td>按键访问字典</td>
+<td>列表主要按位置访问</td>
+</tr>
+<tr>
+<td><code>if</code> / <code>else</code></td>
+<td>条件分支</td>
+<td>缩进决定语句属于哪个分支</td>
+</tr>
+<tr>
+<td><code>for i in range(3)</code></td>
+<td>依次让 <code>i</code> 为0、1、2</td>
+<td>不包含3</td>
+</tr>
+<tr>
+<td><code>def f(x): ...</code></td>
+<td>封装一段可重复调用的计算</td>
+<td><code>return</code> 把结果交给调用者</td>
+</tr>
+</tbody>
+</table>
+<p><code>print()</code> 用于显示，<code>return</code> 用于返回函数结果。Notebook 单元格通常只自动显示最后一个表达式；要对比多个计算结果，可以显式 <code>print</code>。</p>
+<h2 id="14函数类和实例">1.4：函数、类和实例</h2>
+<p>对应：<a href="../../mycode/%E5%85%A5%E9%97%A8/main.py">main.py</a> 中的 <code>Man</code> 类。</p>
+<ul>
+<li>类定义一类对象包含哪些数据、可以执行哪些操作。</li>
+<li><code>m = Man('Glance')</code> 创建一个实例，初始化时调用 <code>__init__</code>。</li>
+<li><code>self</code> 指向当前实例；<code>self.name</code> 保存这个实例的数据。</li>
+<li><code>m.hello()</code> 读取实例中的名字并执行方法。</li>
+</ul>
+<p>联系第4章：<code>simpleNet</code> 也是同样的组织方式，只是实例数据变成 <code>self.W</code>，方法变成 <code>predict()</code> 和 <code>loss()</code>。</p>
+<h2 id="15numpy-数组">1.5：NumPy 数组</h2>
+<h3 id="列表与数组">列表与数组</h3>
+<pre><code class="language-python">import numpy as np
+
+a = [1, 2, 3]
+x = np.array(a)
+
+a * 2       # [1, 2, 3, 1, 2, 3]：列表重复
+x * 2       # array([2, 4, 6])：逐元素乘法
+</code></pre>
+<p>这一区别解释了后面的函数为什么先把输入转换成 <code>np.array</code>：损失函数里的 <code>y - t</code>、<code>(y - t) ** 2</code> 都需要数值数组运算。</p>
+<h3 id="形状维数元素类型">形状、维数、元素类型</h3>
+<pre><code class="language-python">X = np.array([[1, 2, 3], [4, 5, 6]])
+X.shape     # (2, 3)：2行、3列
+X.ndim      # 2：两个轴
+X.size      # 6：总元素数
+X.dtype     # 查看元素类型
+</code></pre>
+<p><code>shape</code> 是“每个轴有多长”，<code>ndim</code> 是“有几个轴”。一维数组 <code>(3,)</code> 与二维数组 <code>(1, 3)</code> 不同。</p>
+<h3 id="广播">广播</h3>
+<p>广播让满足形状规则的不同数组可以一起运算。可以直觉地想成把较小数组沿某个方向重复使用，不需要自己写循环。</p>
+<pre><code class="language-python">A = np.array([[1, 2], [3, 4]])
+b = np.array([10, 20])
+A + b       # [[11, 22], [13, 24]]：每一行都加上 b
+A * 10      # [[10, 20], [30, 40]]
+</code></pre>
+<p>补充记法：从最右边的轴开始比较，每对长度相同或其中一个为1，才可以广播。不能把“形状不同也能算”理解成任意形状都能算。</p>
+<p>联系神经网络：批输入 <code>X @ W</code> 为 <code>(N, H)</code>，偏置 <code>b</code> 为 <code>(H,)</code>，相加时把同一个偏置向量用到每个样本上。</p>
+<h3 id="索引和筛选">索引和筛选</h3>
+<pre><code class="language-python">X = np.array([[51, 55], [14, 19], [0, 4]])
+X[0]            # [51, 55]：取一行
+X[0, 1]         # 55：取一个元素
+X[[0, 2]]       # 取第0、2行
+X[X &gt; 15]       # [51, 55, 19]：布尔筛选
+</code></pre>
+<p><code>X &gt; 15</code> 得到的是布尔数组；<code>X[X &gt; 15]</code> 才是取出满足条件的值。第4章的 <code>x_train[batch_mask]</code> 则是用整数索引数组选择多行。</p>
+<h2 id="16绘图">1.6：绘图</h2>
+<p>对应：<a href="../../mycode/%E5%85%A5%E9%97%A8/numpy_demo.py">numpy_demo.py</a>。</p>
+<pre><code class="language-python">import matplotlib.pyplot as plt
+
+x = np.arange(0, 6, 0.1)
+plt.plot(x, np.sin(x), label='sin')
+plt.plot(x, np.cos(x), linestyle='--', label='cos')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend()
+plt.show()
+</code></pre>
+<p><code>plot</code> 观察函数曲线，<code>imshow</code> 显示图像。你的代码使用 PIL 的 <code>Image.open()</code> 读图片，再交给 <code>imshow()</code>。</p>
+<h2 id="复习要点">复习要点</h2>
+<ul>
+<li><code>*</code> 的行为取决于对象：列表重复与数组逐元素乘法不同；矩阵乘法见第3章。</li>
+<li>文件相对路径以程序的当前工作目录为起点，不一定是文件所在目录。找不到数据时，先查看工作目录。</li>
+<li>不必先背完全部 API；优先能解释当前数组的形状、每个轴代表什么。</li>
+</ul>
+<h2 id="可选自测">可选自测</h2>
+<ol>
+<li><code>np.array([1, 2, 3]).shape</code> 与 <code>np.array([[1, 2, 3]]).shape</code> 分别是什么？</li>
+<li>对 <code>A = np.array([[1, 2], [3, 4]])</code>，<code>A + np.array([10, 20])</code> 得到什么？</li>
+<li>如果函数里只有 <code>print(result)</code> 而没有 <code>return</code>，调用者收到什么？</li>
+</ol>
+<details>
+<summary>回忆后展开参考答案</summary>
+
+1. `(3,)` 与 `(1, 3)`。
+2. `[[11, 22], [13, 24]]`。
+3. 收到 `None`；屏幕显示结果不等于返回结果。
+
+</details></article>
+<footer class="footer"><a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/notes/%E6%96%8B%E8%97%A4-%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8/01-Python%E5%85%A5%E9%97%A8.md">在 GitHub 阅读 Markdown 原文</a>
+ · <a href="../../reference/index.html">返回手边册</a></footer></main></div></body></html>

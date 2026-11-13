@@ -1,0 +1,58 @@
+/* Chapter 7: an annotated field guide, shared by the index and short lessons. */
+.cnn-guide{--accent:#17675f;--soft:#edf4ef}
+.cnn-guide .main{max-width:1240px;width:100%;padding-top:46px}
+.cnn-guide .reading{max-width:1120px}
+.cnn-guide h1{font-family:var(--sans);font-weight:750;letter-spacing:-1.5px}
+.cnn-guide h2{font-family:var(--sans);font-size:25px;font-weight:700;letter-spacing:0}
+.cnn-guide .lead{max-width:660px;line-height:1.9}
+.cnn-guide .hero{position:relative;border-bottom:2px solid var(--ink);padding-bottom:28px}
+.cnn-guide .side-links a{line-height:1.65}
+.cnn-guide .side-note{font-size:12px}
+.cnn-guide section{scroll-margin-top:28px}
+.cnn-section{margin:48px 0}
+.cnn-heading{display:flex;align-items:baseline;gap:16px;margin-bottom:22px}
+.cnn-heading .sec-no{font:13px var(--mono);color:var(--accent);border-bottom:2px solid var(--accent);padding-bottom:5px}
+.cnn-heading h2{margin:0}
+.cnn-intro{max-width:720px;color:var(--muted)}
+.cnn-columns{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.cnn-panel{padding:24px;background:white;border:1px solid var(--line);border-radius:8px;min-width:0}
+.cnn-panel p:last-child{margin-bottom:0}
+.cnn-guide p,.cnn-guide li{font-size:14px}
+.cnn-guide pre{font-size:12px;border-radius:6px;padding:18px 20px}
+.cnn-guide table{font-size:13px}
+.cnn-guide th{font-size:11px;color:var(--muted);letter-spacing:.4px}
+.cnn-guide td{padding:13px 12px}
+.cnn-guide .table-wrap{border:1px solid var(--line);border-radius:7px;background:#fff}
+.cnn-guide .table-wrap table{margin:0}
+.cnn-guide figure{margin:24px 0}
+.cnn-guide figcaption{font-size:12px;color:var(--muted);line-height:1.8;margin-top:10px}
+.cnn-guide figure img{display:block;width:100%;height:auto}
+.cnn-guide .visual-figure{margin-inline:0}
+.cnn-guide .visual-figure img{max-width:100%;height:auto}
+.cnn-equation{padding:19px 22px;border-left:3px solid var(--accent);background:var(--soft);font:15px/2 var(--mono);overflow:auto;margin:20px 0;border-radius:0 6px 6px 0}
+.cnn-caption{font-size:12px!important;color:var(--muted)}
+.cnn-strip{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:7px;overflow:hidden;margin:22px 0;background:#fff}
+.cnn-strip>div{padding:18px 22px;border-right:1px solid var(--line)}
+.cnn-strip>div:last-child{border:0}
+.cnn-strip small{display:block;font-size:11px;color:var(--muted)}
+.cnn-strip strong{display:block;font:600 24px/1.7 var(--mono);color:var(--accent)}
+.cnn-strip span{font-size:12px;color:var(--muted)}
+.cnn-guide .note{border-radius:0 6px 6px 0;line-height:1.9}
+.cnn-guide .source{line-height:1.8}
+.cnn-guide details{padding:15px 0}
+.cnn-guide .lesson-card{border-radius:6px}
+.cnn-guide .lesson-cards{grid-template-columns:repeat(3,1fr)}
+/* Compact chapter entry; normal document flow prevents stretched empty cards. */
+#chapter-7 .cnn-index-lead{font-size:14px;color:var(--muted);max-width:750px}
+.cnn-index-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 30px}
+.cnn-index-grid .card{border:0;border-radius:0;background:transparent;border-top:1px solid var(--line);padding:22px 0;display:grid;grid-template-columns:32px minmax(0,1fr);gap:14px;align-content:start}
+.cnn-index-grid .cnn-index-num{font:13px/1.8 var(--mono);color:var(--accent)}
+.cnn-index-grid .card h3{font-size:18px;margin-bottom:10px}
+.cnn-index-grid .card p{font-size:13px;line-height:1.9}
+.cnn-index-grid .card .source{border:0;padding:0;margin:12px 0 0}
+.cnn-index-grid .card code{overflow-wrap:anywhere}
+.cnn-mini-shapes{display:grid;gap:5px;font:12px/1.8 var(--mono);color:var(--accent);margin:10px 0}
+.cnn-index-grid .cnn-mini-shapes span{display:block}
+@media(max-width:850px){.cnn-columns,.cnn-index-grid{grid-template-columns:1fr}.cnn-guide .lesson-cards{grid-template-columns:1fr}.cnn-guide .main{padding:30px 22px}.cnn-strip>div{padding:14px}.cnn-strip strong{font-size:20px}}
+@media(max-width:520px){.cnn-guide .main{padding:26px 18px}.cnn-heading{gap:10px}.cnn-guide h2{font-size:21px}.cnn-panel{padding:18px}.cnn-strip{grid-template-columns:1fr}.cnn-strip>div{border-right:0;border-bottom:1px solid var(--line)}.cnn-strip strong{font-size:24px}.cnn-guide pre{padding:14px;font-size:11px}.cnn-guide td{padding:10px 8px}.cnn-section{margin:36px 0}}
+@media print{.cnn-guide .main{max-width:none;padding:0}.cnn-guide h1{font-size:25pt}.cnn-guide h2{font-size:16pt}.cnn-guide p,.cnn-guide li{font-size:10pt}.cnn-section{margin:22px 0}.cnn-columns,.cnn-index-grid{display:block}.cnn-panel{margin:12px 0;break-inside:avoid}.cnn-guide pre{font-size:8pt}.cnn-guide table{font-size:8pt}.cnn-strip strong{font-size:16pt}.cnn-heading{break-after:avoid}.cnn-guide figure{break-inside:avoid}.cnn-guide .lesson-cards{display:block}.cnn-guide .table-wrap{overflow:visible}.cnn-index-grid .card{break-inside:avoid}}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="解释池化层中 reshape(-1, pool_h * pool_w) 如何把 im2col 结果分成独立窗口。">
+<title>短课16：池化窗口的形状</title>
+<link rel="stylesheet" href="../assets/teach.css"><link rel="stylesheet" href="../assets/chapter7.css">
+<link rel="stylesheet" href="../assets/code-highlight.css">
+<script src="../assets/teach.js" defer></script>
+<script src="../assets/vendor/highlight/highlight.min.js" defer></script>
+<script src="../assets/code-highlight.js" defer></script>
+</head>
+<body class="cnn-guide">
+<div class="layout">
+<aside class="sidebar">
+<a class="brand" href="../reference/index.html"><small>DEEP LEARNING / CH 7</small>卷积神经网络</a>
+<nav class="side-links" aria-label="本课目录"><a href="#context">代码位置</a><a href="#shapes">形状变化</a><a href="#recall">回忆检查</a><a href="#source">教材来源</a></nav>
+<button class="secondary print-button" data-print type="button">打印当前页</button>
+</aside>
+<main class="main reading">
+<header class="hero">
+<p class="eyebrow">LESSON 0016 / POOLING</p>
+<h1>池化窗口的形状</h1>
+<p class="lead">读懂 <code>col.reshape(-1, pool_h * pool_w)</code>：把每个通道上的池化窗口分成一行。</p>
+<div class="meta"><span>约 3 分钟</span><span>教材 7.4.4 · 书内第223页</span><a href="../mycode/chapter7.ipynb">自己的 Notebook</a></div>
+</header>
+<section id="context">
+<h2>先看前后两步</h2>
+<pre><code class="language-python">col = im2col(x, pool_h, pool_w, stride, pad)
+col = col.reshape(-1, pool_h * pool_w)
+out = np.max(col, axis=1)</code></pre>
+<p><code>im2col</code> 把每个空间位置的窗口摊开，但一行里仍包含所有通道的窗口值。池化要对每个通道分别取最大值，因此第二行把每个通道的窗口单独排成一行，第三行才能沿着窗口内的元素求最大值。</p>
+</section>
+<section id="shapes">
+<h2>看窗口怎样变成输出</h2>
+<p>图中每种颜色表示同一个空间位置的 <code>2×2</code> 窗口。先看上方两个通道，再沿箭头追踪同色窗口在 <code>im2col</code>、<code>reshape</code> 和最大池化中的变化。</p>
+<figure class="visual-figure"><img src="../assets/pooling-reshape-diagram.svg" alt="两个通道的4乘4输入中，彩色2乘2窗口按位置展开到im2col矩阵；reshape把每个位置的两个通道窗口拆成独立行，逐行取最大值，再恢复成两个2乘2输出特征图。"><figcaption>从上往下看：每个位置的两个通道窗口并排展开，再被 reshape 分成两行。</figcaption></figure>
+<p>图里的 <code>(4, 8)</code> 有4个空间位置，每行放两个通道的窗口，各4个数。reshape 把每行的8个数拆成两行，每行宽度固定为4；因此 <code>-1</code> 推出总行数是8。</p>
+<div class="note"><strong>记忆点</strong><code>pool_h * pool_w</code> 是每个窗口的元素数；<code>-1</code> 自动算“有多少个独立的通道窗口”。</div>
+</section>
+<section id="recall">
+<h2>检查理解</h2>
+<form class="quiz" data-answer="a" data-explanation="窗口大小决定每行保留多少个待比较元素；-1根据总元素数推导出窗口行数。">
+<fieldset><legend>窗口为 <code>2×2</code> 时，reshape 后每行代表什么？</legend>
+<label><input type="radio" name="q1" value="a">一个通道内的池化窗口</label>
+<label><input type="radio" name="q1" value="b">一张图像内的所有像素</label>
+</fieldset>
+<div class="buttons"><button type="submit">核对</button><button class="secondary" type="reset">重做</button></div>
+<p class="feedback" role="status" aria-live="polite"></p>
+</form>
+<p>把这条形状链对照你 Notebook 里的输入与池化参数手算一次。你的答案或仍不确定的形状可以发给我。</p>
+</section>
+<section id="source">
+<h2>教材与代码</h2>
+<p>本课按教材池化层实现的思路拆解。卷积层和池化层共用 im2col；池化按通道独立展开，然后对每个窗口行取最大值。</p>
+<p class="source"><a href="../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=248">主教材 · 7.4.4 池化层的实现 · 书内第223页</a><a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/layers.py">作者配套层实现</a><a href="../reference/chapter7.html#pooling-reshape">第七章速查</a></p>
+</section>
+<nav class="lesson-nav"><a href="0015-cnn-overview.html">← CNN整体结构</a><a href="../reference/chapter7.html">第七章速查 →</a></nav>
+<footer class="footer">本课聚焦池化前向的窗口分组；反向传播的 arg_max 与 col2im 留待后续。</footer>
+</main>
+</div>
+</body>
+</html>

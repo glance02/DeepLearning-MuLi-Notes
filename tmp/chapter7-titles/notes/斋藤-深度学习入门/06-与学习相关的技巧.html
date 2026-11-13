@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第6章：与学习相关的技巧 · 深度学习手边册</title>
+<link rel="stylesheet" href="../../assets/teach.css">
+<link rel="stylesheet" href="../../assets/site-notes.css">
+<link rel="stylesheet" href="../../assets/code-highlight.css">
+<script src="../../assets/teach.js" defer></script>
+<script src="../../assets/vendor/highlight/highlight.min.js" defer></script>
+<script src="../../assets/code-highlight.js" defer></script>
+<script src="../../assets/site-math.js" defer></script>
+<script src="../../assets/vendor/mathjax/tex-svg-full.js" defer></script></head>
+<body><div class="layout"><aside class="sidebar">
+<a class="brand" href="../../reference/index.html"><small>DEEP LEARNING / NOTES</small>深度学习 · 手边册</a>
+<p class="side-label">斋藤 · 学习笔记</p><nav class="side-links" aria-label="章节导航"><a href="00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.html">《深度学习入门》学习笔记</a><a href="01-Python%E5%85%A5%E9%97%A8.html">第1章：Python入门</a><a href="02-%E6%84%9F%E7%9F%A5%E6%9C%BA.html">第2章：感知机</a><a href="03-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第3章：神经网络</a><a href="04-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%9A%84%E5%AD%A6%E4%B9%A0.html">第4章：神经网络的学习</a><a href="05-%E8%AF%AF%E5%B7%AE%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%B3%95.html">第5章：误差反向传播法</a><a href="06-%E4%B8%8E%E5%AD%A6%E4%B9%A0%E7%9B%B8%E5%85%B3%E7%9A%84%E6%8A%80%E5%B7%A7.html" aria-current="page">第6章：与学习相关的技巧</a><a href="07-%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第7章：卷积神经网络</a></nav>
+<p class="side-label">回查与练习</p><nav class="side-links">
+<a href="../../reference/index.html">公式 · 概念 · 代码</a>
+<a href="../../reference/index.html#review">交互短练习</a></nav>
+<button class="secondary print-button" data-print type="button">打印当前页</button></aside>
+<main class="main reading"><header class="hero"><p class="eyebrow">STUDY NOTES</p><h1>第6章：与学习相关的技巧</h1>
+<p class="lead">斋藤康毅《深度学习入门》 · 结合自己的代码逐章回顾。</p></header>
+<details class="note-toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#第6章与学习相关的技巧">第6章：与学习相关的技巧</a><ul>
+<li><a href="#本章学习回顾">本章学习回顾</a></li>
+<li><a href="#61参数更新">6.1：参数更新</a><ul>
+<li><a href="#符号说明">符号说明</a></li>
+<li><a href="#sgd">SGD</a></li>
+<li><a href="#momentum">Momentum</a></li>
+<li><a href="#adagrad">AdaGrad</a></li>
+<li><a href="#adam">Adam</a></li>
+</ul>
+</li>
+<li><a href="#62权重初始化">6.2：权重初始化</a><ul>
+<li><a href="#sigmoid与梯度消失">Sigmoid与梯度消失</a></li>
+<li><a href="#relu激活值分布">ReLU激活值分布</a></li>
+</ul>
+</li>
+<li><a href="#63batch-normalization">6.3：Batch Normalization</a><ul>
+<li><a href="#标准化与仿射变换">标准化与仿射变换</a></li>
+</ul>
+</li>
+<li><a href="#multilayernet的结构与实现">MultiLayerNet的结构与实现</a></li>
+<li><a href="#641过拟合实验">6.4.1：过拟合实验</a><ul>
+<li><a href="#epoch与评价记录">epoch与评价记录</a></li>
+</ul>
+</li>
+<li><a href="#642权值衰减">6.4.2：权值衰减</a><ul>
+<li><a href="#权值衰减实验结果">权值衰减实验结果</a></li>
+</ul>
+</li>
+<li><a href="#643dropout">6.4.3：Dropout</a></li>
+<li><a href="#65超参数验证与最优化">6.5：超参数验证与最优化</a><ul>
+<li><a href="#参数与超参数">参数与超参数</a></li>
+<li><a href="#数据集划分与用途">数据集划分与用途</a></li>
+<li><a href="#随机搜索与对数尺度">随机搜索与对数尺度</a></li>
+</ul>
+</li>
+<li><a href="#66小结">6.6：小结</a></li>
+<li><a href="#来源">来源</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</details>
+<article class="note-content"><span id="第6章与学习相关的技巧" hidden>第6章：与学习相关的技巧</span>
+<p><a href="00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.html">返回学习导航</a> · <a href="05-%E8%AF%AF%E5%B7%AE%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%B3%95.html">上一章：误差反向传播法</a></p>
+<p>整理日期：2026-11-06。<strong>第六章已完成。</strong> 本章把参数更新、权重初始化、Batch Normalization、正则化与超参数验证连起来，结合自己的代码和实验回查。</p>
+<p>HTML：<a href="../../reference/chapter6.html">第六章总结与速查</a> · <a href="../../reference/multi-layer-net.html">MultiLayerNet代码手册</a> · <a href="../../reference/dropout.html">Dropout速查</a> · <a href="../../lessons/0012-multilayernet-parameters.html">参数与层短练习</a> · <a href="../../lessons/0013-multilayernet-training.html">一次更新短练习</a> · <a href="../../lessons/0014-dropout-mask.html">Dropout短练习</a>。</p>
+<h2 id="本章学习回顾">本章学习回顾</h2>
+<table>
+<thead>
+<tr>
+<th>内容</th>
+<th>当前状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>6.1 参数更新</td>
+<td>已写SGD、Momentum、AdaGrad、Adam；Adam目前以知道如何使用为目标</td>
+</tr>
+<tr>
+<td>6.2 权重初始化</td>
+<td>已讨论标准差、Xavier、He和激活值分布；已运行前向直方图实验</td>
+</tr>
+<tr>
+<td>6.3 Batch Normalization</td>
+<td>已读概念和对比图；自己的网络尚未加入BN</td>
+</tr>
+<tr>
+<td>6.4.1 过拟合</td>
+<td>已写基础MultiLayerNet，用300个训练样本训练并保存准确率曲线</td>
+</tr>
+<tr>
+<td>6.4.2 权值衰减</td>
+<td>已运行L2实验，讨论正则项、梯度与训练/测试曲线</td>
+</tr>
+<tr>
+<td>6.4.3 Dropout</td>
+<td>已运行Dropout实验，保存训练与测试准确率曲线</td>
+</tr>
+<tr>
+<td>6.5 超参数验证与最优化</td>
+<td>已阅读；本节选择不实际敲代码，之后有调参需求时再回查</td>
+</tr>
+<tr>
+<td>6.6 小结</td>
+<td>用全章主线回顾学习技巧，接下来进入第7章CNN</td>
+</tr>
+</tbody>
+</table>
+<p>基础网络保存在<code>common/multi_layer_net.py</code>；L2与Dropout通过Notebook中的子类扩展。回查代码时，可先看层宽与参数，再看<code>loss → gradient → optimizer.update</code>。</p>
+<h2 id="61参数更新">6.1：参数更新</h2>
+<pre><code class="language-python">grads = network.gradient(x_batch, t_batch)  # 计算梯度
+optimizer.update(network.params, grads)    # 更新参数
+</code></pre>
+<ul>
+<li><code>params</code>保存W和b，两者都需要学习；<code>x</code>是输入数据，不由普通优化器修改。</li>
+<li><code>grads</code>保存损失对各参数的梯度，键与参数对应，形状相同。</li>
+</ul>
+<h3 id="符号说明">符号说明</h3>
+<p>以下以权重W表示一组待更新参数，偏置b使用相同规则。t从1开始，表示第t次参数更新；<span class="arithmatex">\(W_t\)</span>为本次更新前的参数，<span class="arithmatex">\(W_{t+1}\)</span>为更新后的参数。</p>
+<div class="arithmatex">\[
+g_t=\left.\frac{\partial L}{\partial W}\right|_{W=W_t}
+\]</div>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>代码对应</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="arithmatex">\(W_t\)</span></td>
+<td>当前参数数组</td>
+<td><code>params[key]</code></td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(g_t\)</span></td>
+<td>当前参数处、本批数据对应的梯度</td>
+<td><code>grads[key]</code></td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\eta\)</span></td>
+<td>学习率</td>
+<td><code>lr</code></td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\alpha\)</span></td>
+<td>Momentum的动量系数</td>
+<td><code>momentum</code></td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\beta_1\)</span>、<span class="arithmatex">\(\beta_2\)</span></td>
+<td>Adam两种历史量的衰减系数</td>
+<td><code>beta1</code>、<code>beta2</code></td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(\varepsilon\)</span></td>
+<td>分母中的微小常数</td>
+<td><code>eps</code>或代码中的<code>1e-7</code></td>
+</tr>
+</tbody>
+</table>
+<p>下列公式中的平方、开方、乘法与除法均按元素计算；<code>⊙</code>表示逐元素乘法。各历史数组与对应参数形状相同。</p>
+<h3 id="sgd">SGD</h3>
+<p>沿当前梯度的反方向更新参数：</p>
+<div class="arithmatex">\[
+W_{t+1}=W_t-\eta g_t
+\]</div>
+<pre><code class="language-python">params[key] -= self.lr * grads[key]
+</code></pre>
+<p>η控制更新步长；SGD本身不保存梯度历史。</p>
+<h3 id="momentum">Momentum</h3>
+<p>v保存更新步长，将上一轮的步长与当前梯度结合，初值v₀=0：</p>
+<div class="arithmatex">\[
+\begin{aligned}
+v_t &amp;= \alpha v_{t-1}-\eta g_t \\
+W_{t+1} &amp;= W_t+v_t
+\end{aligned}
+\]</div>
+<pre><code class="language-python">self.v[key] = self.momentum * self.v[key] - self.lr * grads[key]
+params[key] += self.v[key]
+</code></pre>
+<p>当前实现的α默认为0.9。v中已经包含负梯度方向与学习率，所以参数更新时直接加v。</p>
+<h3 id="adagrad">AdaGrad</h3>
+<p>h累计每个参数历次梯度的平方，初值h₀=0：</p>
+<div class="arithmatex">\[
+\begin{aligned}
+h_t &amp;= h_{t-1}+g_t\odot g_t \\
+W_{t+1} &amp;= W_t-\eta\frac{g_t}{\sqrt{h_t}+\varepsilon}
+\end{aligned}
+\]</div>
+<pre><code class="language-python">self.h[key] += grads[key] * grads[key]
+params[key] -= self.lr * grads[key] / (np.sqrt(self.h[key]) + 1e-7)
+</code></pre>
+<p>累计平方梯度较大的位置，分母较大、有效学习率较小。h跨多次更新保留，不在每轮重新初始化。</p>
+<h3 id="adam">Adam</h3>
+<p>m保存梯度的指数移动平均，v保存梯度平方的指数移动平均，初值m₀=v₀=0：</p>
+<div class="arithmatex">\[
+\begin{aligned}
+m_t &amp;= \beta_1 m_{t-1}+(1-\beta_1)g_t \\
+v_t &amp;= \beta_2 v_{t-1}+(1-\beta_2)(g_t\odot g_t)
+\end{aligned}
+\]</div>
+<p>对零初始化引入的偏差进行校正，再更新参数：</p>
+<div class="arithmatex">\[
+\begin{aligned}
+\hat{m}_t &amp;= \frac{m_t}{1-\beta_1^t},\qquad
+\hat{v}_t = \frac{v_t}{1-\beta_2^t} \\
+W_{t+1} &amp;= W_t-\eta\frac{\hat{m}_t}{\sqrt{\hat{v}_t}+\varepsilon}
+\end{aligned}
+\]</div>
+<pre><code class="language-python">self.m[key] = self.beta1 * self.m[key] + (1 - self.beta1) * g
+self.v[key] = self.beta2 * self.v[key] + (1 - self.beta2) * g**2
+m_hat = self.m[key] / (1 - self.beta1**self.step)
+v_hat = self.v[key] / (1 - self.beta2**self.step)
+params[key] -= self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
+</code></pre>
+<p>这里g对应<code>grads[key]</code>，<code>self.step</code>对应t，每次调用update递增一次。当前实现默认β₁=0.9、β₂=0.999、ε=10⁻⁸。Adam中的v是梯度平方的历史，含义与Momentum的更新步长v不同。</p>
+<p>完整实现见<a href="../../reference/adam.html">Adam公式与代码</a>。本阶段以使用为主，公式用于对照变量与更新过程。</p>
+<p>历史数组与参数同形，通常在第一次调用时用<code>np.zeros_like(val)</code>初始化。初始化放在<code>if ... is None</code>内，实际更新放在外面，避免每次清空历史。</p>
+<h2 id="62权重初始化">6.2：权重初始化</h2>
+<p>前向实验从随机输入出发，计算5层输出，保存到<code>activations</code>后画直方图。循环每轮对应一个不同的层，生成本层权重；没有损失、反向或参数更新。你已经主动指出这不是学习过程，见<a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/learning-records/0012-initialization-without-training.md">学习记录0012</a>。</p>
+<pre><code class="language-python">z = np.dot(x, w)
+a = sigmoid(z)  # 后来换成relu(z)作比较
+activations[i] = a
+</code></pre>
+<p>每层1000个样本、每样本100个输出，所以一幅图统计100000个激活值。横轴是输出数值，纵轴是落入区间的个数；不是权重本身，也不是准确率。</p>
+<table>
+<thead>
+<tr>
+<th>权重采样尺度</th>
+<th>写法</th>
+<th>node_num=100时的标准差</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>固定1</td>
+<td><code>randn(...) * 1</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td>固定0.01</td>
+<td><code>randn(...) * 0.01</code></td>
+<td>0.01</td>
+</tr>
+<tr>
+<td>本实验Xavier</td>
+<td><code>randn(...) / np.sqrt(node_num)</code></td>
+<td>0.1</td>
+</tr>
+<tr>
+<td>He</td>
+<td><code>randn(...) * np.sqrt(2.0 / node_num)</code></td>
+<td>约0.1414</td>
+</tr>
+</tbody>
+</table>
+<p>输入节点数决定尺度。0.01初始化在第五章的浅网络中可以成功训练，不等于在所有深度和设置下都同样合适。</p>
+<h3 id="sigmoid与梯度消失">Sigmoid与梯度消失</h3>
+<p>设<code>a=sigmoid(z)</code>，局部导数是<code>a*(1-a)</code>。a=0.5时导数0.25；a=0.99或0.01时为0.0099。你第五章写过的<code>dx = dout * (1-self.out) * self.out</code>，就是乘上这一局部导数。</p>
+<p>反向传播连续经过小导数，可能让靠前层的梯度很小，更新几乎不动。实际网络还包含权重乘法和分支求和；直方图只是提示前向是否进入饱和区，不直接测量梯度。</p>
+<h3 id="relu激活值分布">ReLU激活值分布</h3>
+<p>ReLU把负值归零，因而零附近的高柱正常。比较三种初始化时，重点看剩下正值的分布是否逐层向0收缩：标准差0.01时迅速收缩，Xavier时渐缩，He较能保持尺度。正输入处ReLU导数为1，即使输出很小也如此，不能直接套用sigmoid的饱和解释。</p>
+<p>当前Notebook保存的是<strong>ReLU + Xavier、50个区间、显示0到1范围</strong>的图；不是He对比图。ReLU可以输出大于1的值，图里的范围不代表其输出上界。</p>
+<p><img alt="Notebook保存的ReLU和Xavier初始化激活值图" src="../../assets/chapter6-activation.png"></p>
+<p>上图直接来自本次Notebook保存输出。零附近柱很高，其余柱在当前纵轴下显得较小。<a href="../../reference/activation-distribution.html">逐行解释与读图</a>。</p>
+<h2 id="63batch-normalization">6.3：Batch Normalization</h2>
+<p>图例<code>Normal (without BatchNorm)</code>指“不使用BN的对照组”，不是初始化方法名。自己的第五章网络为784→50→10、W标准差0.01、b为0；它与教材配套BN脚本的5隐藏层、1000个训练样本、多种初始化尺度和短训练配置不同，不能只按准确率直接比较。</p>
+<p>BN帮助降低网络对初始化尺度的敏感性，并可使学习更顺利；不用BN也能得到高准确率。本章这部分以阅读概念与比较实验为主，没有自己实现BN。</p>
+<h3 id="标准化与仿射变换">标准化与仿射变换</h3>
+<p>对mini-batch中同一特征的值，先求均值与方差，再标准化，最后进行可学习的缩放和平移：</p>
+<div class="arithmatex">\[
+\hat{x}=\frac{x-\mu_B}{\sqrt{\sigma_B^2+\varepsilon}},\qquad y=\gamma\hat{x}+\beta
+\]</div>
+<p><code>γ</code>与<code>β</code>是网络学习的参数，<code>ε</code>用于避免除零。这里调整的是网络中间数据的分布，与把输入图片除以255不是同一项处理。教材示意顺序为<code>Affine → BatchNorm → ReLU</code>，见PDF209—211页。</p>
+<p>另一个代码衔接点：学习率以实际优化器对象的<code>lr</code>为准。写了<code>learning_rate=0.1</code>，但创建<code>SGD()</code>使用默认0.01时，前面的变量不会自动生效。</p>
+<h2 id="multilayernet的结构与实现">MultiLayerNet的结构与实现</h2>
+<p>自己的文件是<a href="../../mycode/common/multi_layer_net.py">common/multi_layer_net.py</a>，基础层在<a href="../../mycode/common/layers.py">layers.py</a>。</p>
+<p>以已经跑通的<code>MultiLayerNet(4, [3,5], 2)</code>为例：</p>
+<ol>
+<li><code>[4]+[3,5]+[2]</code>拼接出层宽列表。</li>
+<li>相邻项产生W1(4,3)、W2(3,5)、W3(5,2)，偏置长度分别为3、5、2。</li>
+<li>把参数交给Affine对象，建立<code>Affine1 → Relu1 → Affine2 → Relu2 → Affine3</code>。</li>
+<li><code>predict</code>依次执行forward，6个样本返回(6,2)得分；得分可以为负。</li>
+<li><code>loss</code>在得分后调用SoftmaxWithLoss，返回标量。</li>
+<li><code>gradient</code>先loss刷新缓存，再逆序backward，收集每个Affine的dW/db。</li>
+<li>优化器在类外修改params；Affine使用的参数数组随之更新。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>容器</th>
+<th>保存什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>self.params</code></td>
+<td>可学习的W和b数组</td>
+</tr>
+<tr>
+<td><code>self.layers</code></td>
+<td>按计算顺序保存的层对象</td>
+</tr>
+<tr>
+<td><code>self.last_layer</code></td>
+<td>单独接收得分和标签的损失层</td>
+</tr>
+<tr>
+<td><code>grads</code></td>
+<td>各个参数对应的梯度数组</td>
+</tr>
+</tbody>
+</table>
+<p>params里的W与对应Affine.W指向同一数组。SGD使用原地<code>-=</code>，因此下一轮前向会用新参数。这是从“计算梯度”连接到“实际学习”的关键。</p>
+<p>你已报告小测试loss约0.7319547、accuracy=0.5以及六组梯度形状正确。这是6个随机样本的接口测试，不是MNIST训练准确率。完整解释和交互维度表见<a href="../../reference/multi-layer-net.html">MultiLayerNet手册</a>。</p>
+<p>当前accuracy与损失层backward按one-hot使用标签，所以MNIST读取保留：</p>
+<pre><code class="language-python">load_mnist(normalize=True, one_hot_label=True)
+</code></pre>
+<h2 id="641过拟合实验">6.4.1：过拟合实验</h2>
+<pre><code class="language-python">x_train = x_train[:300]
+t_train = t_train[:300]
+</code></pre>
+<p><code>[:300]</code>等价于<code>[0:300]</code>，保留索引0到299。图片、标签同步取前300项，保持配对；数组切片用在第一维，图片的784个特征保留。语法回查：<a href="01-Python%E5%85%A5%E9%97%A8.html">第一章基本语法</a>。</p>
+<p>当前实验：6个100神经元隐藏层，加1个10分类输出层；He初始化、无BN或正则化、batch=100、SGD(lr=0.01)。通过较深网络与少量数据，观察训练与测试准确率出现差距。</p>
+<p><img alt="本次保存的训练与测试准确率" src="../../assets/chapter6-overfitting.png"></p>
+<p>蓝色train逐渐接近1，橙色test后期约在0.76附近，差距明显。这支持当前实验出现了对训练数据拟合较好、对未见数据泛化不足的现象。数值是从保存图近似读取，没有重新训练，也没有把图像读数当作精确的最终列表数值。</p>
+<h3 id="epoch与评价记录">epoch与评价记录</h3>
+<ul>
+<li><code>iter_per_epoch=300/100=3</code>，每隔3次更新评价一次。</li>
+<li>条件<code>i % iter_per_epoch == 0</code>在i=0也触发，所以第一个记录实际在第一次更新后。</li>
+<li><code>max_epochs=201</code>在当前写法中记录201次评价；最后在i=600评价并退出，即总计601次更新。</li>
+<li>图横轴沿用教材，把这些评价点编号为0到200，不严格等于已经完整走完的epoch数。</li>
+<li><code>np.random.choice</code>默认可重复抽样，因此约3个batch也不保证恰好看遍300个不同样本。</li>
+</ul>
+<h2 id="642权值衰减">6.4.2：权值衰减</h2>
+<p>本章使用L2正则化，在交叉熵之外加上所有权重元素的平方和：</p>
+<div class="arithmatex">\[
+L=L_{\mathrm{data}}+\frac{\lambda}{2}\sum_i\sum_{j,k}(W_i)_{jk}^2
+\]</div>
+<p><code>λ</code>控制惩罚强度；本次实现只惩罚W，不惩罚b。<code>0.5</code>使平方项求导后正好得到<code>λW</code>。对应Notebook中的两处变化：</p>
+<pre><code class="language-python"># loss：累加每一层权重的惩罚
+weight_decay += 0.5 * self.weight_decay_lambda * np.sum(W ** 2)
+
+# gradient：在原来的权重梯度上补上正则项的导数
+grads[key] = grads[key] + self.weight_decay_lambda * self.params[key]
+</code></pre>
+<p><code>super().loss(x,t)</code>调用父类原来的交叉熵计算；循环再取W1、W2……直到输出层的W，逐层累加惩罚。<code>loss</code>只计算目标函数，参数仍由优化器更新。</p>
+<h3 id="权值衰减实验结果">权值衰减实验结果</h3>
+<p><img alt="权值衰减lambda为0.1时的训练与测试准确率" src="../../assets/chapter6-weight-decay.png"></p>
+<p>使用<code>λ=0.1</code>、SGD学习率0.01，记录201个评价点。Notebook最后保存的打印为训练准确率<strong>92.00%</strong>、测试准确率<strong>73.55%</strong>。</p>
+<p>上面的无正则化实验中，训练接近100%，测试约75%—76%；加入L2后两条线的差距缩小，但测试准确率没有提高。过拟合主要看同一次实验里训练与未见数据的表现差距；不能只凭train从100%降到92%判断效果更好。测试曲线趋平而训练曲线继续上升，也是典型信号，不要求test一定下降。</p>
+<h2 id="643dropout">6.4.3：Dropout</h2>
+<p>每个隐藏层采用<code>Affine → ReLU → Dropout</code>，输出层不加Dropout。训练时随机生成与输入同形的布尔mask；每次前向重新抽取，本轮反向复用同一张mask。</p>
+<pre><code class="language-python"># 训练前向：True保留，False归零
+self.mask = np.random.rand(*x.shape) &gt; self.dropout_ratio
+out = x * self.mask
+
+# 反向：被屏蔽位置的梯度也为0
+dx = dout * self.mask
+
+# 评价：不随机屏蔽，按教材版本乘以保留比例
+out = x * (1.0 - self.dropout_ratio)
+</code></pre>
+<p>例如<code>x=[1,2,3,4]</code>、<code>mask=[True,False,True,False]</code>，训练输出为<code>[1,0,3,0]</code>。没有删除权重数组，也没有改变输入输出形状。<code>dropout_ratio=0.2</code>表示每个位置有约20%的概率被屏蔽，不保证每次恰好屏蔽20%。</p>
+<p>训练集准确率和测试集准确率都在评价模式下计算。<code>train</code>表示评价的数据来自训练集，不表示计算准确率时开启随机丢弃。本项目沿用教材的缩放方式，不与“训练时除以保留比例、评价时不缩放”的inverted dropout混用。</p>
+<p><img alt="丢弃比例为0.2时的Dropout实验曲线" src="../../assets/chapter6-dropout.png"></p>
+<p>本次单独使用Dropout，不叠加L2；丢弃比例0.2，SGD学习率0.01，记录301个评价点、901次更新。最后保存的打印为训练准确率<strong>79.67%</strong>、测试准确率<strong>62.98%</strong>。曲线后段仍在上升，这次运行没有得到比前两组更高的测试准确率。正则化方法不保证在任意配置下都提升准确率；各组随机初始化、训练时长也不同，读图时一并考虑。</p>
+<p>详细代码见<a href="../../mycode/chapter6.ipynb">Notebook</a>，机制见<a href="../../reference/dropout.html">Dropout速查</a>，可选练习见<a href="../../lessons/0014-dropout-mask.html">短课14</a>。两张新图均从Notebook保存输出提取，没有重新训练。</p>
+<h2 id="65超参数验证与最优化">6.5：超参数验证与最优化</h2>
+<p>本节已阅读，按自己的安排不实际敲代码。回查时抓住以下关系即可。</p>
+<h3 id="参数与超参数">参数与超参数</h3>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>例子</th>
+<th>怎样确定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>参数</td>
+<td>W、b；BN的γ、β</td>
+<td>通过训练中的梯度更新学习</td>
+</tr>
+<tr>
+<td>超参数</td>
+<td>学习率、batch大小、隐藏层宽度、λ、Dropout比例</td>
+<td>由实验设定，并根据验证结果选择</td>
+</tr>
+</tbody>
+</table>
+<h3 id="数据集划分与用途">数据集划分与用途</h3>
+<table>
+<thead>
+<tr>
+<th>数据</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>训练集</td>
+<td>计算梯度、学习W和b</td>
+</tr>
+<tr>
+<td>验证集</td>
+<td>比较超参数配置，选择模型</td>
+</tr>
+<tr>
+<td>测试集</td>
+<td>配置确定后，评价最终泛化表现</td>
+</tr>
+</tbody>
+</table>
+<p>教材示例先同步打乱图片与标签，再从训练数据中分出20%作为验证数据。20%是示例比例。前面的<code>test</code>曲线用于学习时观察泛化差距；正式搜索超参数时，应依据验证集作选择，反复用测试集选配置会使测试结果失去独立评价的作用。</p>
+<h3 id="随机搜索与对数尺度">随机搜索与对数尺度</h3>
+<ol>
+<li>先为超参数设定较宽的范围。</li>
+<li>随机抽取一组配置，进行较短时间的训练。</li>
+<li>比较验证准确率，观察较好配置集中在哪些范围。</li>
+<li>缩小范围，再重复搜索，最后选定配置。</li>
+</ol>
+<p>教材的学习率示例是在10⁻⁶到10⁻²之间按对数尺度采样：先均匀抽取指数，再取10的幂。这样能够探索多个数量级，而不是把大部分尝试挤在较大的数值区间。较短训练用于初步筛选，不等于已经获得最终训练结果。</p>
+<p>图6-24中的实线是验证准确率，虚线是训练准确率；Best-1等按验证结果排序。先看验证表现，再结合训练曲线判断配置，不把最高训练准确率当作最佳超参数。实现需要时再查<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch06/hyperparameter_optimization.py">教材配套搜索脚本</a>。</p>
+<h2 id="66小结">6.6：小结</h2>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>本章对应的方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>梯度算出来后怎样更新参数？</td>
+<td>SGD、Momentum、AdaGrad、Adam</td>
+</tr>
+<tr>
+<td>训练开始前，信号怎样更好地传到深层？</td>
+<td>合适的初始化，尤其Xavier与He</td>
+</tr>
+<tr>
+<td>怎样调整中间数据的分布？</td>
+<td>Batch Normalization</td>
+</tr>
+<tr>
+<td>怎样限制对训练数据的过度拟合？</td>
+<td>权值衰减、Dropout</td>
+</tr>
+<tr>
+<td>怎样比较学习率等配置？</td>
+<td>划分验证集，随机搜索并逐步缩小范围</td>
+</tr>
+</tbody>
+</table>
+<p>接下来从第7章7.1整体结构继续，先看CNN相对全连接网络新增的卷积层与池化层。已有代码和短练习供遇到卡点时回查，不需要先补完所有实验。</p>
+<h2 id="来源">来源</h2>
+<ul>
+<li>本地教材：第6章书内163—200页（PDF188—225）；6.2初始化PDF201起、6.3BN PDF209起、6.4正则化PDF214起、L2 PDF216、Dropout PDF217—219、6.5验证与最优化PDF220—224、6.6小结PDF225。下一章7.1在PDF226起；阅读器比书内页码多25。</li>
+<li><a href="../../mycode/chapter6.ipynb">自己的第六章实验</a>、<a href="../../mycode/common/multi_layer_net.py">MultiLayerNet</a>、<a href="../../mycode/common/layers.py">基础层</a>：当前实现与保存输出的一手材料。</li>
+<li><a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/multi_layer_net.py">教材MultiLayerNet</a>、<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch06/batch_norm_test.py">BN实验配置</a>：仅在线核对，未复制整套作者代码。</li>
+<li><a href="https://numpy.org/doc/stable/user/basics.indexing.html">NumPy索引与切片</a>、<a href="https://arxiv.org/pdf/1412.6980">Adam论文</a>：语法和算法的补充来源。</li>
+<li><a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/layers.py#L89-L105">教材Dropout层</a>、<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/multi_layer_net_extend.py">扩展网络</a>、<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch06/hyperparameter_optimization.py">超参数搜索</a>：核对mask、模式传递、验证数据与搜索流程。</li>
+</ul></article>
+<footer class="footer"><a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/notes/%E6%96%8B%E8%97%A4-%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8/06-%E4%B8%8E%E5%AD%A6%E4%B9%A0%E7%9B%B8%E5%85%B3%E7%9A%84%E6%8A%80%E5%B7%A7.md">在 GitHub 阅读 Markdown 原文</a>
+ · <a href="../../reference/index.html">返回手边册</a></footer></main></div></body></html>

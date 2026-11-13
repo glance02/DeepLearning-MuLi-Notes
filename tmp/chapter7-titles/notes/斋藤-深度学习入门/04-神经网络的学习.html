@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第4章：神经网络的学习 · 深度学习手边册</title>
+<link rel="stylesheet" href="../../assets/teach.css">
+<link rel="stylesheet" href="../../assets/site-notes.css">
+<link rel="stylesheet" href="../../assets/code-highlight.css">
+<script src="../../assets/teach.js" defer></script>
+<script src="../../assets/vendor/highlight/highlight.min.js" defer></script>
+<script src="../../assets/code-highlight.js" defer></script>
+<script src="../../assets/site-math.js" defer></script>
+<script src="../../assets/vendor/mathjax/tex-svg-full.js" defer></script></head>
+<body><div class="layout"><aside class="sidebar">
+<a class="brand" href="../../reference/index.html"><small>DEEP LEARNING / NOTES</small>深度学习 · 手边册</a>
+<p class="side-label">斋藤 · 学习笔记</p><nav class="side-links" aria-label="章节导航"><a href="00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.html">《深度学习入门》学习笔记</a><a href="01-Python%E5%85%A5%E9%97%A8.html">第1章：Python入门</a><a href="02-%E6%84%9F%E7%9F%A5%E6%9C%BA.html">第2章：感知机</a><a href="03-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第3章：神经网络</a><a href="04-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%9A%84%E5%AD%A6%E4%B9%A0.html" aria-current="page">第4章：神经网络的学习</a><a href="05-%E8%AF%AF%E5%B7%AE%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%B3%95.html">第5章：误差反向传播法</a><a href="06-%E4%B8%8E%E5%AD%A6%E4%B9%A0%E7%9B%B8%E5%85%B3%E7%9A%84%E6%8A%80%E5%B7%A7.html">第6章：与学习相关的技巧</a><a href="07-%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第7章：卷积神经网络</a></nav>
+<p class="side-label">回查与练习</p><nav class="side-links">
+<a href="../../reference/index.html">公式 · 概念 · 代码</a>
+<a href="../../reference/index.html#review">交互短练习</a></nav>
+<button class="secondary print-button" data-print type="button">打印当前页</button></aside>
+<main class="main reading"><header class="hero"><p class="eyebrow">STUDY NOTES</p><h1>第4章：神经网络的学习</h1>
+<p class="lead">斋藤康毅《深度学习入门》 · 结合自己的代码逐章回顾。</p></header>
+<details class="note-toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#第4章神经网络的学习">第4章：神经网络的学习</a><ul>
+<li><a href="#41从数据中学习">4.1：从数据中学习</a></li>
+<li><a href="#42损失函数">4.2：损失函数</a><ul>
+<li><a href="#421均方误差">4.2.1：均方误差</a></li>
+<li><a href="#422交叉熵误差">4.2.2：交叉熵误差</a></li>
+<li><a href="#one-hot-标签与类别编号">one-hot 标签与类别编号</a></li>
+<li><a href="#423mini-batch与平均损失">4.2.3：mini-batch与平均损失</a></li>
+<li><a href="#424两种标签形式的批量交叉熵">4.2.4：两种标签形式的批量交叉熵</a></li>
+<li><a href="#425损失函数与准确率">4.2.5：损失函数与准确率</a></li>
+</ul>
+</li>
+<li><a href="#43数值微分">4.3：数值微分</a><ul>
+<li><a href="#431导数和中心差分">4.3.1：导数和中心差分</a></li>
+<li><a href="#432函数与切线">4.3.2：函数与切线</a></li>
+<li><a href="#433偏导数">4.3.3：偏导数</a></li>
+</ul>
+</li>
+<li><a href="#44梯度">4.4：梯度</a><ul>
+<li><a href="#数值梯度的计算流程">数值梯度的计算流程</a></li>
+<li><a href="#正梯度与负梯度">正梯度与负梯度</a></li>
+</ul>
+</li>
+<li><a href="#441梯度下降和学习率">4.4.1：梯度下降和学习率</a><ul>
+<li><a href="#学习率与收敛">学习率与收敛</a></li>
+<li><a href="#数组类型与原地更新">数组类型与原地更新</a></li>
+</ul>
+</li>
+<li><a href="#442神经网络的梯度">4.4.2：神经网络的梯度</a><ul>
+<li><a href="#权重梯度及其形状">权重梯度及其形状</a></li>
+<li><a href="#simplenet的数据流">simpleNet的数据流</a></li>
+<li><a href="#梯度函数与求导位置">梯度函数与求导位置</a></li>
+<li><a href="#fw与共享参数数组">f(W)与共享参数数组</a></li>
+<li><a href="#数值扰动与参数更新">数值扰动与参数更新</a></li>
+</ul>
+</li>
+<li><a href="#45学习算法">4.5：学习算法</a><ul>
+<li><a href="#批内固定数据与跨轮采样">批内固定数据与跨轮采样</a></li>
+</ul>
+</li>
+<li><a href="#451twolayernet的结构与方法">4.5.1：TwoLayerNet的结构与方法</a><ul>
+<li><a href="#参数与梯度的字典">参数与梯度的字典</a></li>
+<li><a href="#网络方法与返回值">网络方法与返回值</a></li>
+<li><a href="#准确率的计算">准确率的计算</a></li>
+<li><a href="#参数梯度的计算">参数梯度的计算</a></li>
+<li><a href="#同名方法与工具函数">同名方法与工具函数</a></li>
+</ul>
+</li>
+<li><a href="#452mini-batch训练">4.5.2：mini-batch训练</a><ul>
+<li><a href="#梯度计算参数更新与损失记录">梯度计算、参数更新与损失记录</a></li>
+<li><a href="#数值梯度的计算量">数值梯度的计算量</a></li>
+</ul>
+</li>
+<li><a href="#453泛化性能的评价">4.5.3：泛化性能的评价</a><ul>
+<li><a href="#iteration与epoch">iteration与epoch</a></li>
+<li><a href="#准确率记录">准确率记录</a></li>
+</ul>
+</li>
+<li><a href="#46小结">4.6：小结</a></li>
+<li><a href="#本地数据读取与预处理">本地数据读取与预处理</a></li>
+<li><a href="#可选自测">可选自测</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</details>
+<article class="note-content"><span id="第4章神经网络的学习" hidden>第4章：神经网络的学习</span>
+<p><a href="00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.html">返回学习导航</a> · <a href="03-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">上一章：神经网络</a></p>
+<p>教材：4.1—4.6，书内81—119页（PDF 第106—144页）。对应代码：<a href="../../mycode/chapter4.ipynb">chapter4.ipynb</a>。本章使用数值梯度建立训练流程；后续反向传播训练的实现与结果见<a href="05-%E8%AF%AF%E5%B7%AE%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%B3%95.html">第5章</a>。</p>
+<p>本章解决的问题：第3章假设权重已经给定，现在怎样从数据中调整权重？已读部分的主线是：用损失衡量预测，再用损失对参数的变化率指导更新。</p>
+<h2 id="41从数据中学习">4.1：从数据中学习</h2>
+<p>第2章对着逻辑门真值表手工选择权重；神经网络参数多，改为从训练数据中自动调整。</p>
+<p>教材比较了三种思路：人工写识别规则、人工提取特征后让算法学习、让神经网络连同特征表示一起学习。“端到端”描述从输入到目标输出的学习方式，不表示不需要人选择数据、网络结构和学习设置。</p>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>要记住什么</th>
+<th>对应代码</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>训练数据</td>
+<td>用来调整参数</td>
+<td><code>x_train, t_train</code></td>
+</tr>
+<tr>
+<td>测试数据</td>
+<td>用来评价模型对未参与训练的数据的表现</td>
+<td><code>x_test, t_test</code></td>
+</tr>
+<tr>
+<td>泛化</td>
+<td>对未见数据也能正确处理</td>
+<td>测试表现用于估计这种能力</td>
+</tr>
+<tr>
+<td>过拟合</td>
+<td>很适应训练数据，对未见数据表现较差</td>
+<td>不能只看训练成绩</td>
+</tr>
+</tbody>
+</table>
+<p>识别训练集中已有的字，不等于能识别另一个人新写的字。这就是分开训练与测试的动机。</p>
+<h2 id="42损失函数">4.2：损失函数</h2>
+<p>网络预测为 <code>y</code>，正确标签为 <code>t</code>，损失为一个标量。学习时希望损失变小。</p>
+<h3 id="421均方误差">4.2.1：均方误差</h3>
+<div class="arithmatex">\[
+E=\frac12\sum_k(y_k-t_k)^2
+\]</div>
+<p>对应 notebook 的 <code>mean_squard_error(y, t)</code>：</p>
+<pre><code class="language-python">return 0.5 * np.sum((y - t) ** 2)
+</code></pre>
+<p>逐项相减、平方、求和，再乘 <code>0.5</code>。这里按教材使用“均方误差”的名称，但当前公式实际上是<strong>平方误差和的一半</strong>，没有除以类别数；不要因为函数名字带 <code>mean</code> 就自行多除一次。</p>
+<p>你使用的两个例子中，正确标签都是数字2：</p>
+<table>
+<thead>
+<tr>
+<th>预测情况</th>
+<th>正确类2的输出</th>
+<th>类7的输出</th>
+<th>此公式的损失</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>类2概率最高</td>
+<td>0.6</td>
+<td>0.1</td>
+<td>0.0975</td>
+</tr>
+<tr>
+<td>类7概率最高</td>
+<td>0.1</td>
+<td>0.6</td>
+<td>0.5975</td>
+</tr>
+</tbody>
+</table>
+<p>第一个预测与标签向量更接近，所以损失更小。Notebook 单元格只自动显示最后一次调用的结果，要比较两者可以显式输出。</p>
+<h3 id="422交叉熵误差">4.2.2：交叉熵误差</h3>
+<div class="arithmatex">\[
+E=-\sum_k t_k\log y_k
+\]</div>
+<p>这里的标签是 one-hot：正确类别为1，其余为0；<code>log</code> 是自然对数。设正确类别是 <code>c</code>，则：</p>
+<div class="arithmatex">\[
+E=-\log y_c
+\]</div>
+<p>因为其他项都乘以0，只留下正确类别那一项。</p>
+<table>
+<thead>
+<tr>
+<th>正确类别的预测概率</th>
+<th>理想公式的交叉熵约为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.9</td>
+<td>0.105</td>
+</tr>
+<tr>
+<td>0.6</td>
+<td>0.511</td>
+</tr>
+<tr>
+<td>0.1</td>
+<td>2.303</td>
+</tr>
+</tbody>
+</table>
+<p>直觉：真实答案发生时，模型越“不相信它”，受到的惩罚就越大。</p>
+<p>你的代码加上 <code>delta = 1e-7</code>，以避免 <code>np.log(0)</code>。因此数值结果对应 <code>-log(y_c + delta)</code>，与理想公式有很小差别。</p>
+<p>“one-hot 交叉熵只显式取正确类别的概率”不意味着其他权重完全无关：正确类别的 softmax 概率分母包含所有类别的分数。</p>
+<h3 id="one-hot-标签与类别编号">one-hot 标签与类别编号</h3>
+<pre><code class="language-python">labels = np.array([2, 0, 1, 2])
+table = np.eye(3, dtype=int)
+one_hot = table[labels]
+# [[0, 0, 1], [1, 0, 0], [0, 1, 0], [0, 0, 1]]
+</code></pre>
+<p>对应你“理解独热编码的代码”单元格。<code>np.eye(3)</code> 创建单位矩阵，编号是多少，就取第几行。</p>
+<p>MNIST 原标签 <code>(60000,)</code> 经 <code>np.eye(10)[t_train]</code> 转换后是 <code>(60000, 10)</code>。每一行仍然只表示一个样本的类别，不是多了10个样本。</p>
+<h3 id="423mini-batch与平均损失">4.2.3：mini-batch与平均损失</h3>
+<div class="arithmatex">\[
+E=-\frac1N\sum_{n=1}^{N}\sum_k t_{nk}\log y_{nk}
+\]</div>
+<p><code>N</code> 是参与本次计算的样本数，<code>k</code> 是类别索引。先求每个样本的损失，再对样本取平均；这里除的是样本数，不是类别数。</p>
+<p>使用全部训练数据计算开销大，于是随机抽取一小批，近似反映整体情况。</p>
+<p>你的“随机抽取10笔数据”单元格中：</p>
+<pre><code class="language-python">batch_mask = np.random.choice(trian_size, batch_size)
+x_batch = x_train[batch_mask]
+t_batch = t_train[batch_mask]
+</code></pre>
+<ul>
+<li><code>trian_size</code> 是你代码中的变量名，表示训练样本数。</li>
+<li><code>batch_mask</code> 是样本索引数组，图像和标签必须用<strong>同一组索引</strong>，否则会打乱对应关系。</li>
+<li>当前 <code>batch_size=10</code>，所以图像批形状为 <code>(10, 784)</code>，one-hot 标签批形状为 <code>(10, 10)</code>。</li>
+<li>这里 <code>np.random.choice</code> 默认有放回抽样，因此一批中可能出现重复索引；“抽10个”不保证是10个不同样本。</li>
+</ul>
+<p>第3章的批推理与本节的 mini-batch 学习都把样本组成数组，但用途不同：前者加速预测，后者用小批量估计训练所需的损失与梯度。</p>
+<h3 id="424两种标签形式的批量交叉熵">4.2.4：两种标签形式的批量交叉熵</h3>
+<p>one-hot 标签可以用 <code>-sum(t * log(y + delta)) / N</code>。</p>
+<p>如果第n个样本的正确类别编号为<span class="arithmatex">\(c_n\)</span>，则同一个平均损失也可写为：</p>
+<div class="arithmatex">\[
+E=-\frac{1}{N}\sum_{n=0}^{N-1}\log y_{n,c_n}
+\]</div>
+<p>这里<span class="arithmatex">\(y_{n,c_n}\)</span>是该样本正确类别的预测概率；它与one-hot公式等价，不需要先构造完整的one-hot数组。</p>
+<p>类别编号标签可以直接取每行正确类别的概率：</p>
+<pre><code class="language-python">y = np.array([[0.1, 0.2, 0.7],
+              [0.8, 0.1, 0.1]])
+t = np.array([2, 0])
+correct_probs = y[np.arange(2), t]  # [y[0, 2], y[1, 0]]，即 [0.7, 0.8]
+loss = -np.mean(np.log(correct_probs + 1e-7))
+</code></pre>
+<p><code>np.arange(N)</code> 给出样本行号，<code>t</code> 给出每行的正确类别列号。两组索引配对取元素，不是取出所有行列的组合。</p>
+<p>你的 notebook 开头定义的是单样本 one-hot 版本，没有按批大小取平均。末尾导入的 <a href="../../mycode/common/functions.py">common/functions.py</a> 版本支持类别编号和 one-hot，并计算样本平均损失；执行导入后，同名 <code>cross_entropy_error</code> 会指向导入的函数。</p>
+<h3 id="425损失函数与准确率">4.2.5：损失函数与准确率</h3>
+<p>例如真实类别是2，模型给它的概率从0.3提高到0.4，但另一个类别仍然最高，预测类别就不变。准确率没有改善，交叉熵却能反映这次进步。</p>
+<p>对固定数据集，准确率通常是分段不变、越过某个边界才跳变的指标，绝大多数位置的导数为0，难以为梯度更新提供方向。交叉熵等损失能对连续的预测变化给出反馈。</p>
+<h2 id="43数值微分">4.3：数值微分</h2>
+<h3 id="431导数和中心差分">4.3.1：导数和中心差分</h3>
+<p>导数是局部变化率，不只是输出的变化量。式（4.4）：</p>
+<div class="arithmatex">\[
+f'(x)=\lim_{h\to0}\frac{f(x+h)-f(x)}h
+\]</div>
+<p>在计算机中用一个有限的小量近似，不直接取极限。你的 <code>numerical_diff(f, x)</code> 使用中心差分：</p>
+<div class="arithmatex">\[
+f'(x)\approx\frac{f(x+h)-f(x-h)}{2h},\qquad h=10^{-4}
+\]</div>
+<pre><code class="language-python">h = 1e-4
+return (f(x + h) - f(x - h)) / (2 * h)
+</code></pre>
+<p>分母是 <code>2*h</code>，因为两个采样位置相隔 <code>2*h</code>。<code>h</code> 并非越小越好：过小会使两个函数值在有限精度中难以区分。这里的 <code>1e-4</code> 是教材示例的取值，不是所有问题的固定最优值。</p>
+<h3 id="432函数与切线">4.3.2：函数与切线</h3>
+<p>你的函数名为 <code>function_l</code>（字母 l），教材写作 <code>function_1</code>（数字1）：</p>
+<div class="arithmatex">\[
+f(x)=0.01x^2+0.1x,\qquad f'(x)=0.02x+0.1
+\]</div>
+<p>在 <code>x=5</code> 时，函数值是 <code>0.75</code>，导数约为 <code>0.2</code>；在 <code>x=10</code> 时，导数约为 <code>0.3</code>。函数值与导数是两个不同的量。</p>
+<p>你画切线时的代码：</p>
+<pre><code class="language-python">tangent = function_l(a) + slope * (x - a)
+</code></pre>
+<p>对应直线方程 <code>y = f(a) + f'(a)*(x-a)</code>：经过点 <code>(a, f(a))</code>，斜率为 <code>f'(a)</code>。</p>
+<h3 id="433偏导数">4.3.3：偏导数</h3>
+<div class="arithmatex">\[
+f(x_0,x_1)=x_0^2+x_1^2
+\]</div>
+<p>对其中一个变量求导时，固定其他变量。在 <code>(3, 4)</code> 处：</p>
+<div class="arithmatex">\[
+\frac{\partial f}{\partial x_0}=2x_0=6,\qquad
+\frac{\partial f}{\partial x_1}=2x_1=8
+\]</div>
+<p>不是同时把两个变量都加上 <code>h</code>。那样测到的是同时沿两个坐标移动产生的变化。</p>
+<h2 id="44梯度">4.4：梯度</h2>
+<p>把各个变量的偏导数按顺序放在一起：</p>
+<div class="arithmatex">\[
+\nabla f=\left(\frac{\partial f}{\partial x_0},\frac{\partial f}{\partial x_1}\right)
+\]</div>
+<p>你的 <code>numerical_gradient(function_2, np.array([3.0, 4.0]))</code> 返回约 <code>[6., 8.]</code>。</p>
+<h3 id="数值梯度的计算流程">数值梯度的计算流程</h3>
+<p>对应 notebook 中 <code># 梯度</code> 单元格：</p>
+<ol>
+<li><code>np.zeros_like(x)</code> 创建与参数形状相同的梯度容器。</li>
+<li>保存当前参数分量 <code>tmp_val</code>。</li>
+<li>只把这个分量改成 <code>tmp_val + h</code>，计算 <code>fxh1</code>。</li>
+<li>只把这个分量改成 <code>tmp_val - h</code>，计算 <code>fxh2</code>。</li>
+<li>用中心差分算该分量的偏导数。</li>
+<li>恢复这个分量，再处理下一个。</li>
+</ol>
+<p>恢复原值是为了让每个偏导数都在<strong>同一个参数点</strong>上计算。</p>
+<h3 id="正梯度与负梯度">正梯度与负梯度</h3>
+<ul>
+<li>正梯度 <code>∇f</code> 指向局部上升最快的方向。</li>
+<li>负梯度 <code>-∇f</code> 指向局部下降最快的方向；这里比较的是欧氏距离下单位长度的微小移动。</li>
+<li>这提供的是当前位置的局部信息，不保证直接指向全局最小值。</li>
+</ul>
+<p><strong>教材阅读提醒：书内第101页末的脚注说明图4-9画的是负梯度，但第102页附近部分文字直接称之为“梯度”并描述下降方向。记忆时以 <code>∇f</code> 的定义和式（4.7）中的减号区分，避免把正、负梯度记反。</strong></p>
+<p>例如 <code>f=x0²+x1²</code> 在 <code>(3,4)</code> 的正梯度为 <code>(6,8)</code>，指向远离原点的方向；负梯度 <code>(-6,-8)</code> 才指向原点。</p>
+<h2 id="441梯度下降和学习率">4.4.1：梯度下降和学习率</h2>
+<p>式（4.7）按分量更新，向量写法是：</p>
+<div class="arithmatex">\[
+x\leftarrow x-\eta\nabla f(x)
+\]</div>
+<p>对应你定义的 <code>gradiant_descent()</code>：</p>
+<pre><code class="language-python">grad = numerical_gradient(f, x)
+x -= lr * grad
+</code></pre>
+<p><code>lr</code> 即学习率 <code>η</code>，控制沿负梯度走多大一步，<code>step_num</code> 控制更新次数。每一步都在新位置重新计算梯度。</p>
+<p>对 <code>f=x0²+x1²</code>，从 <code>(-3,4)</code> 出发，梯度为 <code>(-6,8)</code>。如果 <code>lr=0.1</code>，一步后：</p>
+<div class="arithmatex">\[
+(-3,4)-0.1(-6,8)=(-2.4,3.2)
+\]</div>
+<p>距离原点更近，函数值由25变成16。</p>
+<h3 id="学习率与收敛">学习率与收敛</h3>
+<p>对这个特定的二次函数，解析梯度是 <code>2*x</code>，所以更新等于：</p>
+<div class="arithmatex">\[
+x_{new}=(1-2\eta)x
+\]</div>
+<ul>
+<li><code>η=0.1</code>：每步变成原来的0.8倍，逐步靠近0。</li>
+<li><code>η=10</code>：每步理论上变成原来的-19倍，来回跨过原点且幅度放大。</li>
+<li><code>η=1e-10</code>：每步变化极小，有限次更新后几乎还在原位置。</li>
+</ul>
+<p>这是解释你 <code>lr=10</code> 实验的直觉；数值微分在非常大的数值处还会受精度影响，不需要复现某个精确的巨大输出。</p>
+<p><strong>梯度方向正确不等于任意步长都会降低损失。</strong> 另外，梯度为0也不一定是全局最小值，还可能是局部极小、极大或鞍点。</p>
+<h3 id="数组类型与原地更新">数组类型与原地更新</h3>
+<ul>
+<li>数值微分需要浮点数组。<code>np.array([-3.0, 4])</code> 因为含浮点元素，会得到浮点数组；若全是整数，微小扰动就可能被截断。</li>
+<li>你的函数使用 <code>x = init_x</code> 后原地更新，<code>x</code> 和调用者的数组指向同一对象。重复比较不同学习率时，应像书里一样重新创建起点；如果想保留原数组，则可使用副本。</li>
+</ul>
+<p>权重、偏置是学习算法调整的参数；学习率是事先设置的超参数。</p>
+<h2 id="442神经网络的梯度">4.4.2：神经网络的梯度</h2>
+<h3 id="权重梯度及其形状">权重梯度及其形状</h3>
+<p>前面的平方和函数对坐标求梯度；神经网络学习则把输入 <code>x</code>、标签 <code>t</code> 固定，考察损失 <code>L</code> 随权重 <code>W</code> 怎样变化。</p>
+<div class="arithmatex">\[
+W=\begin{pmatrix}
+w_{11}&amp;w_{12}&amp;w_{13}\\
+w_{21}&amp;w_{22}&amp;w_{23}
+\end{pmatrix},\qquad
+\frac{\partial L}{\partial W}=
+\begin{pmatrix}
+\frac{\partial L}{\partial w_{11}}&amp;\frac{\partial L}{\partial w_{12}}&amp;\frac{\partial L}{\partial w_{13}}\\
+\frac{\partial L}{\partial w_{21}}&amp;\frac{\partial L}{\partial w_{22}}&amp;\frac{\partial L}{\partial w_{23}}
+\end{pmatrix}
+\]</div>
+<p>每个元素回答“只微调这个权重，损失怎样变化”。梯度的形状与权重相同，都是 <code>(2,3)</code>。书中 <code>w11</code> 对应 Python 的 <code>W[0,0]</code>，注意下标起点。</p>
+<h3 id="simplenet的数据流">simpleNet的数据流</h3>
+<pre><code class="language-text">x (2,) 与 W (2,3)
+        ↓ np.dot(x, W)
+原始分数 z (3,)
+        ↓ softmax(z)
+类别概率 y (3,)          正确标签 t
+        └───────────────┬─────────┘
+                  cross_entropy_error
+                        ↓
+                  标量损失 L
+</code></pre>
+<p>你的 <code>predict(x)</code> 返回的是原始分数；<code>loss(x,t)</code> 再计算概率和交叉熵。这个教学示例只有权重矩阵，没有偏置或隐藏层。</p>
+<p><code>self.W = np.random.randn(2, 3)</code> 每次随机生成初始权重，因此不同运行的分数和损失通常不同，不必与书中示例逐位相同。</p>
+<h3 id="梯度函数与求导位置">梯度函数与求导位置</h3>
+<p>当前 notebook 已写出：</p>
+<pre><code class="language-python">def f(W):
+    return net.loss(x, t)
+
+dW = numerical_gradient(f, net.W)
+</code></pre>
+<p><code>numerical_gradient</code> 接收两类信息：<code>f</code> 提供函数的计算规则，<code>net.W</code> 提供要计算梯度的位置，即当前各权重的具体取值。</p>
+<p>这与 <code>numerical_gradient(function_2, np.array([3.0,4.0]))</code> 相同：数组不代替函数，它告诉我们在函数的哪个位置求梯度。神经网络中把输入样本和标签固定，逐个扰动权重来观察损失。</p>
+<h3 id="fw与共享参数数组">f(W)与共享参数数组</h3>
+<table>
+<thead>
+<tr>
+<th>名字</th>
+<th>在这个调用中代表什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>net.loss(x,t)</code> 中的 <code>x</code></td>
+<td>输入样本，示例形状为 <code>(2,)</code>，求权重梯度时不变</td>
+</tr>
+<tr>
+<td>梯度函数内部的参数 <code>x</code></td>
+<td>调用时传入的 <code>net.W</code>，形状为 <code>(2,3)</code></td>
+</tr>
+<tr>
+<td><code>net.W</code>、预测方法里的 <code>self.W</code></td>
+<td>网络保存的同一个权重数组</td>
+</tr>
+</tbody>
+</table>
+<p><strong>共享数组的是梯度函数内部的 <code>x</code> 与 <code>net.W</code>，不是两个函数中恰好同名的 <code>x</code>。</strong> 不同函数的局部变量可以同名，名字相同不表示指向同一对象。</p>
+<p>你的梯度函数逐元素原地修改参数数组：</p>
+<pre><code class="language-text">内部 x[idx] = original + h
+         ↓
+net.W 对应元素改变
+         ↓
+调用 f(x)，其中 net.loss(输入样本, 标签) 读取当前 self.W
+         ↓
+得到这次扰动后的损失 L_plus
+</code></pre>
+<p>再改为 <code>original - h</code> 得到 <code>L_minus</code>，中心差分给出该权重的偏导数。形参 <code>W</code> 为满足函数调用形式而保留；实际权重通过网络对象间接读取。</p>
+<h3 id="数值扰动与参数更新">数值扰动与参数更新</h3>
+<p><code>x[idx] = original</code> 恢复刚改动的权重，让下一个分量的偏导数仍在同一个原始权重位置上计算。正常完成数值梯度计算后，权重恢复原样，得到与其同形的 <code>dW</code>。</p>
+<p>真正的梯度下降更新是另一项操作：<code>W_new = W - lr*dW</code>。例如某权重的梯度为0.2、学习率为0.1，更新量为-0.02，即该权重减少0.02。求梯度本身不等于已经完成学习更新。</p>
+<p>另外，末尾导入的 <a href="../../mycode/common/gradient.py">common/gradient.py</a> 版本使用多维索引，支持矩阵参数；前面 notebook 自定义的 <code>range(x.size)</code>、<code>x[idx]</code> 版本对应一维数组。导入会覆盖当前名字，阅读时要区分实际调用的是哪个版本。</p>
+<h2 id="45学习算法">4.5：学习算法</h2>
+<ol>
+<li>从训练集中随机抽取一个mini-batch，图像和标签使用相同的样本索引。</li>
+<li>固定这批数据，在当前参数处计算损失对各个参数的梯度。</li>
+<li>按 <code>参数 -= 学习率 * 梯度</code> 更新参数。</li>
+<li>回到第1步，重新抽样并继续。</li>
+</ol>
+<p>教材将这种使用随机抽样数据作梯度下降的方式称为SGD（随机梯度下降）。这里“随机”描述采样；参数更新的方向仍由算出的梯度决定。</p>
+<h3 id="批内固定数据与跨轮采样">批内固定数据与跨轮采样</h3>
+<p>把这批数据记为B，计算某个权重偏导数时比较的是：</p>
+<div class="arithmatex">\[
+\frac{L_B(W+h)-L_B(W-h)}{2h}
+\]</div>
+<p>这里 <code>W±h</code> 简写为只给目标权重分量加减h，其他权重固定。两次计算中的B必须相同，计算其余权重分量时也仍用B。这样观察到的损失差异才对应参数扰动，而不是同时更换数据的影响。</p>
+<p>更新参数后，下一轮重新随机抽一批数据，继续在新的参数位置求梯度。不同轮的batch可以重叠，不保证完全不同。不断使用训练集中的不同子集，是为了让优化参考整个训练集，而不是一直只看固定的一小部分。</p>
+<p>可以用两层过程区分：</p>
+<pre><code class="language-text">外层：抽batch → 求梯度 → 更新参数 → 再抽batch……
+内层求数值梯度：固定当前batch，逐个扰动权重、比较损失、恢复原值
+</code></pre>
+<h2 id="451twolayernet的结构与方法">4.5.1：TwoLayerNet的结构与方法</h2>
+<p><code>simpleNet</code> 只有一组权重；这里的2层网络包含一个隐藏层和一个输出层，对应两组权重与偏置。输入层不计入层数。</p>
+<h3 id="参数与梯度的字典">参数与梯度的字典</h3>
+<p><code>self.params</code> 是实例中保存参数的字典，<code>grads</code> 是求梯度方法构造并返回的字典。两者键名对应，每项梯度与对应参数同形。</p>
+<p>按你当前实例 <code>input_size=784, hidden_size=100, output_size=10</code>：</p>
+<table>
+<thead>
+<tr>
+<th>参数键</th>
+<th>参数形状</th>
+<th>梯度形状</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>W1</code></td>
+<td><code>(784,100)</code></td>
+<td><code>(784,100)</code></td>
+<td>输入层到隐藏层的连接权重</td>
+</tr>
+<tr>
+<td><code>b1</code></td>
+<td><code>(100,)</code></td>
+<td><code>(100,)</code></td>
+<td>100个隐藏神经元的偏置</td>
+</tr>
+<tr>
+<td><code>W2</code></td>
+<td><code>(100,10)</code></td>
+<td><code>(100,10)</code></td>
+<td>隐藏层到输出层的连接权重</td>
+</tr>
+<tr>
+<td><code>b2</code></td>
+<td><code>(10,)</code></td>
+<td><code>(10,)</code></td>
+<td>10个输出神经元的偏置</td>
+</tr>
+</tbody>
+</table>
+<p><code>__init__</code> 用小的随机数初始化权重，用0初始化偏置。第一层权重的每一列对应一个隐藏神经元，每一行对应一个输入分量。</p>
+<h3 id="网络方法与返回值">网络方法与返回值</h3>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>输入与任务</th>
+<th>返回什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>predict(x)</code></td>
+<td>输入数据，执行两层前向计算</td>
+<td>各样本的类别概率</td>
+</tr>
+<tr>
+<td><code>loss(x,t)</code></td>
+<td>结合预测概率与正确标签</td>
+<td>平均交叉熵，一个标量</td>
+</tr>
+<tr>
+<td><code>accuracy(x,t)</code></td>
+<td>比较预测类别与真实类别</td>
+<td>预测正确的比例</td>
+</tr>
+<tr>
+<td><code>numerical_gradient(x,t)</code></td>
+<td>固定这批数据，分别对四项参数求导</td>
+<td>与参数键名对应的梯度字典</td>
+</tr>
+</tbody>
+</table>
+<p>对于一批N个样本，前向传播的形状为：</p>
+<pre><code class="language-text">x (N,784)
+ → x @ W1 + b1：a1 (N,100)
+ → sigmoid：z1 (N,100)
+ → z1 @ W2 + b2：a2 (N,10)
+ → 按每个样本做softmax：y (N,10)
+</code></pre>
+<p><code>sigmoid</code> 逐元素激活，不改变形状。它应由 <a href="../../mycode/common/functions.py">common/functions.py</a> 导入；第3章 notebook 中的定义不会自动进入该模块。本次已补上工具文件中缺少的实现。</p>
+<h3 id="准确率的计算">准确率的计算</h3>
+<p><code>np.argmax(y, axis=1)</code> 对每一行取最大概率的位置，得到各样本的类别编号；例如 <code>[0.1,0.7,0.2]</code> 对应编号1，而不是返回0.7。</p>
+<p>书中这版 <code>accuracy</code> 的标签t按二维one-hot形式传入，<code>np.argmax(t, axis=1)</code> 将其转换为真实类别编号。对比两个编号数组得到布尔数组，True按1计数：</p>
+<div class="arithmatex">\[
+\operatorname{accuracy}=\frac{1}{N}\sum_{n=0}^{N-1}
+\mathbf{1}\!\left[\operatorname*{argmax}_k y_{nk}=c_n\right]
+\]</div>
+<p><span class="arithmatex">\(c_n\)</span>为真实类别编号，指示函数在条件成立时取1，否则取0，对应<code>np.mean(predicted == actual)</code>。</p>
+<pre><code class="language-text">预测类别：[1,0,2,1]
+真实类别：[1,2,2,0]
+逐项比较：[True,False,True,False]
+准确率：2 / 4 = 0.5，即50%
+</code></pre>
+<p><code>x.shape[0]</code> 是样本数；分母不是类别数。<code>y</code> 在取argmax后已经从概率数组变成类别编号数组，注意同一个变量名在前后保存的内容不同。</p>
+<h3 id="参数梯度的计算">参数梯度的计算</h3>
+<p><code>loss_W = lambda W: self.loss(x,t)</code> 与前面的包装函数一样，固定样本和标签，通过网络对象读取当前参数。方法内依次调用公共数值梯度函数，对 <code>W1,b1,W2,b2</code> 求偏导并放入grads。</p>
+<p>例如 <code>grads['W1'] = numerical_gradient(loss_W, self.params['W1'])</code> 返回第一层权重的梯度；其形状为 <code>(784,100)</code>。这一步测量梯度，后面的训练循环才会用它真正更新参数。</p>
+<h3 id="同名方法与工具函数">同名方法与工具函数</h3>
+<table>
+<thead>
+<tr>
+<th>调用写法</th>
+<th>对应实现</th>
+<th>返回内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>net.numerical_gradient(x,t)</code></td>
+<td><code>TwoLayerNet</code> 的实例方法</td>
+<td>四组参数梯度组成的字典</td>
+</tr>
+<tr>
+<td><code>numerical_gradient(loss_W,param)</code></td>
+<td>从 <code>common.gradient</code> 导入的工具函数</td>
+<td>一个参数数组的梯度</td>
+</tr>
+</tbody>
+</table>
+<p>方法内部直接写 <code>numerical_gradient(...)</code> 时，Python查找该方法的局部及全局名字，不会自动把它当成同名类方法。这里的全局名字由 <code>from common.gradient import numerical_gradient</code> 导入。</p>
+<p>因此这是类方法分别调用工具函数四次，不是递归。如果在这个方法内部写 <code>self.numerical_gradient(x,t)</code>，才是再次调用当前实例的同一个方法，会形成递归。</p>
+<h2 id="452mini-batch训练">4.5.2：mini-batch训练</h2>
+<p><code>np.random.choice(train_size,batch_size)</code> 从0到 <code>train_size-1</code> 随机抽取指定数量的整数。它返回的是样本编号，不是图像本身。</p>
+<pre><code class="language-python">batch_mask = np.random.choice(train_size, batch_size)
+x_batch = x_train[batch_mask]
+t_batch = t_train[batch_mask]
+</code></pre>
+<p>两份数据使用同一组编号，才能保持图像和正确标签配对。默认允许有放回抽样，所以编号可能重复；需要在一次抽样中不重复时，可以加 <code>replace=False</code>。</p>
+<p>当 <code>batch_size=100</code>，训练图像为 <code>(60000,784)</code>、标签为 <code>(60000,10)</code>：</p>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>形状</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>batch_mask</code></td>
+<td><code>(100,)</code></td>
+<td>100个样本编号</td>
+</tr>
+<tr>
+<td><code>x_batch</code></td>
+<td><code>(100,784)</code></td>
+<td>100张展平图像</td>
+</tr>
+<tr>
+<td><code>t_batch</code></td>
+<td><code>(100,10)</code></td>
+<td>对应的100个one-hot标签</td>
+</tr>
+</tbody>
+</table>
+<p>抽样改变样本数，特征与类别维度保持不变。<code>batch_size</code> 控制一次抽多少样本，<code>iters_num</code> 控制训练循环更新多少次。</p>
+<h3 id="梯度计算参数更新与损失记录">梯度计算、参数更新与损失记录</h3>
+<pre><code class="language-python">grad = network.numerical_gradient(x_batch, t_batch)
+for key in ('W1', 'b1', 'W2', 'b2'):
+    network.params[key] -= learning_rate * grad[key]
+</code></pre>
+<p><code>grad</code> 保存当前这批数据的损失对四项参数的梯度。求梯度过程中临时扰动参数并恢复；真正改变网络参数的是循环中的 <code>-=</code>。相同key把参数数组与其梯度数组配对，进行逐元素更新。</p>
+<p>随后用更新后的参数，对同一个batch计算 <code>loss</code> 并存入 <code>train_loss_list</code>。换到下一轮batch时，损失计算用到的数据也变了，因此记录的损失可以波动，不要求每一步严格下降。</p>
+<p>当前训练实例叫 <code>network</code>，隐藏层为50；前面验证形状的实例叫 <code>net</code>，隐藏层为100。比较参数形状时要区分两个实例。</p>
+<h3 id="数值梯度的计算量">数值梯度的计算量</h3>
+<p>当前训练网络为784→50→10，共 <code>784*50+50+50*10+10=39760</code> 个参数。每个参数的中心差分需要两次损失计算，所以一次参数更新需约79520次损失计算，10000轮接近8亿次。</p>
+<p>2026-10-29，在本机训练所用Python环境中，按相同网络与batch形状做短时损失计算测量，外推一轮约43—54秒，10000轮约118—149小时（约5—6天）。这是依赖机器负载的估算，不是所有电脑的固定耗时，也没有读取正在运行的内核迭代计数。当前学习可先运行1轮或使用小网络理解流程；后续第5章的反向传播会用更高效的方法计算梯度。</p>
+<p>教材中的 <code># grad = network.gradient(x_batch,t_batch)</code> 是反向传播版本的替代调用。当前类尚未实现该方法，只取消注释会报AttributeError；实现后可替换数值梯度调用，返回字典的键名和形状与现有更新逻辑对应。</p>
+<h2 id="453泛化性能的评价">4.5.3：泛化性能的评价</h2>
+<p>训练的目标是处理未见数据，而不只是降低某个训练batch的损失。训练损失下降是一项学习信号，但仍需查看不参与参数更新的测试数据表现。</p>
+<ul>
+<li>训练准确率：对训练数据预测正确的比例。</li>
+<li>测试准确率：对测试数据预测正确的比例，用来评价泛化表现。</li>
+<li>如果训练表现很好，测试表现明显较差，需要关注过拟合等原因；不能仅据训练损失下降就宣布模型已经学好。</li>
+</ul>
+<p>这里不是说参数只在训练时有效：训练和推理使用同一组学到的参数，问题在于这组参数适应训练数据，却没有把规律很好地推广到未见数据。</p>
+<p>本节按固定间隔记录两种准确率，避免每次更新都评价整个数据集。</p>
+<h3 id="iteration与epoch">iteration与epoch</h3>
+<p>一次iteration在这里指抽一批数据、求梯度并更新参数一次。一个epoch通常指把训练数据完整遍历一遍。</p>
+<p>60000个训练样本、batch为100，按样本量折算约600次更新为一个epoch。但本书代码每次随机有放回抽样，600次后不保证每个样本都被看到；书内116页的译注也特别区分了这种抽样与打乱后逐批遍历。</p>
+<p>当前代码使用 <code>if i % iter_per_epoch == 0</code>，而i从0开始，因此第一次更新后就记录准确率；之后在i=600、1200等位置再记录。若希望满600次更新才首次记录，可改用 <code>(i+1) % iter_per_epoch == 0</code>。目前iters_num为10，不会按后者条件完成一次epoch记录。</p>
+<h3 id="准确率记录">准确率记录</h3>
+<p>此前代码把 <code>test_acc</code> 同时追加到了两个准确率列表。训练列表应记录训练准确率：</p>
+<pre><code class="language-python">train_acc_list.append(train_acc)
+test_acc_list.append(test_acc)
+</code></pre>
+<p>否则两条保存的曲线会相同，不能据此判断训练、测试表现一致。2026-10-29，用户已自行改为上述写法，并已核对 notebook 源码；无需为核对这行记录逻辑重新执行漫长的数值梯度训练。</p>
+<h2 id="46小结">4.6：小结</h2>
+<pre><code class="language-text">训练数据 → 随机取batch → 前向预测 → 损失
+                                   ↓
+                         损失对各参数的梯度
+                                   ↓
+                           参数 -= 学习率 × 梯度
+                                   ↓
+                         下一批数据，重复学习
+
+测试数据 → 只作评价，检查对未见数据的表现
+</code></pre>
+<p>本章已把「怎样学习」的流程串起来；下一章解决「怎样更高效地求梯度」。完成本章第一遍学习不以等待数值梯度跑完完整epoch为条件。已独立作答证明的理解点与仍待检查的内容，分别记录在学习记录和辅导备忘中。</p>
+<h2 id="本地数据读取与预处理">本地数据读取与预处理</h2>
+<p>教材4.2.3读取数据时使用 <code>normalize=True</code>；你的第4章原读取单元格只做了展平和one-hot转换，没有把图像像素缩放到0—1。现在这段逻辑已封装到 <a href="../../mycode/common/mnist.py">common/mnist.py</a>，在 notebook 中调用：</p>
+<pre><code class="language-python">from common.mnist import load_mnist
+
+(x_train, t_train), (x_test, t_test) = load_mnist(
+    normalize=False, one_hot_label=True
+)
+</code></pre>
+<p>这里显式设 <code>normalize=False</code> 是为了保留原单元格的数据结果。正式衔接MNIST训练时，将其改成 <code>True</code>，使像素缩放到0—1；<code>reshape</code> 只改变形状，不会归一化数值。</p>
+<p>你新写的4.5.2训练单元格已另行调用 <code>normalize=True,one_hot_label=True</code>，与教材的训练预处理一致。</p>
+<p>三个选项分别控制像素归一化、展平和标签编码，默认值为 <code>normalize=True, flatten=True, one_hot_label=False</code>。不展平时每张图像形状为 <code>(1,28,28)</code>。数据路径以模块自身位置为起点，读取现有的 <code>mycode/data/minist.npz</code>；函数返回数据，不负责打印，展示形状仍由 notebook 完成。</p>
+<h2 id="可选自测">可选自测</h2>
+<ol>
+<li>正确类别的预测概率从0.2变为0.5，预测类别仍然错误，交叉熵会怎样变化？准确率呢？</li>
+<li><code>f(x0,x1)=x0²+x1²</code> 在 <code>(1,-2)</code> 的梯度是多少？学习率0.1时更新一步得到什么？</li>
+<li>为什么数值梯度中每次扰动后都要恢复参数？</li>
+</ol>
+<details>
+<summary>回忆后展开参考答案</summary>
+
+1. 交叉熵减小；该样本仍分错，准确率不变。
+2. 梯度为 `(2,-4)`；新位置 `(0.8,-1.6)`。
+3. 让各分量的偏导数在同一个原始参数点计算，避免前面的扰动影响后面的计算。
+
+</details>
+
+<p>后续可选检查：从自己的 <code>dW</code> 中选一个负值，说明对应权重应怎样更新，以及为什么。</p></article>
+<footer class="footer"><a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/notes/%E6%96%8B%E8%97%A4-%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8/04-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%9A%84%E5%AD%A6%E4%B9%A0.md">在 GitHub 阅读 Markdown 原文</a>
+ · <a href="../../reference/index.html">返回手边册</a></footer></main></div></body></html>

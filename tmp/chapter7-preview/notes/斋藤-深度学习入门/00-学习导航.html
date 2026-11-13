@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>《深度学习入门》学习笔记 · 深度学习手边册</title>
+<link rel="stylesheet" href="../../assets/teach.css">
+<link rel="stylesheet" href="../../assets/site-notes.css">
+<link rel="stylesheet" href="../../assets/code-highlight.css">
+<script src="../../assets/teach.js" defer></script>
+<script src="../../assets/vendor/highlight/highlight.min.js" defer></script>
+<script src="../../assets/code-highlight.js" defer></script>
+<script src="../../assets/site-math.js" defer></script>
+<script src="../../assets/vendor/mathjax/tex-svg-full.js" defer></script></head>
+<body><div class="layout"><aside class="sidebar">
+<a class="brand" href="../../reference/index.html"><small>DEEP LEARNING / NOTES</small>深度学习 · 手边册</a>
+<p class="side-label">斋藤 · 学习笔记</p><nav class="side-links" aria-label="章节导航"><a href="00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.html" aria-current="page">《深度学习入门》学习笔记</a><a href="01-Python%E5%85%A5%E9%97%A8.html">第1章：Python入门</a><a href="02-%E6%84%9F%E7%9F%A5%E6%9C%BA.html">第2章：感知机</a><a href="03-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第3章：神经网络</a><a href="04-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%9A%84%E5%AD%A6%E4%B9%A0.html">第4章：神经网络的学习</a><a href="05-%E8%AF%AF%E5%B7%AE%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%B3%95.html">第5章：误差反向传播法</a><a href="06-%E4%B8%8E%E5%AD%A6%E4%B9%A0%E7%9B%B8%E5%85%B3%E7%9A%84%E6%8A%80%E5%B7%A7.html">第6章：与学习相关的技巧</a><a href="07-%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第7章：卷积神经网络</a></nav>
+<p class="side-label">回查与练习</p><nav class="side-links">
+<a href="../../reference/index.html">公式 · 概念 · 代码</a>
+<a href="../../reference/index.html#review">交互短练习</a></nav>
+<button class="secondary print-button" data-print type="button">打印当前页</button></aside>
+<main class="main reading"><header class="hero"><p class="eyebrow">STUDY NOTES</p><h1>《深度学习入门》学习笔记</h1>
+<p class="lead">斋藤康毅《深度学习入门》 · 结合自己的代码逐章回顾。</p></header>
+<details class="note-toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#深度学习入门学习笔记">《深度学习入门》学习笔记</a><ul>
+<li><a href="#按章阅读">按章阅读</a></li>
+<li><a href="#已学内容概览">已学内容概览</a></li>
+<li><a href="#复习要点">复习要点</a></li>
+<li><a href="#当前学习位置">当前学习位置</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</details>
+<article class="note-content"><span id="深度学习入门学习笔记" hidden>《深度学习入门》学习笔记</span>
+<p>教材：<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf">《深度学习入门：基于Python的理论与实现》·斋藤康毅</a>。</p>
+<p>整理日期：2026-10-28；更新日期：2026-11-12。第1—6章已完成，第7章读到7.5并开始CNN训练。</p>
+<p>这是根据教材和 <code>mycode/</code> 补写的复习笔记。自测题供按需回顾，不需要一次做完；读过、敲过代码与能独立使用分别记录。</p>
+<p>HTML入口：<a href="../../reference/index.html">已读内容手边册</a> · <a href="../../reference/chapter5.html">第五章总结与速查</a> · <a href="../../lessons/0009-backprop-review.html">第五章章末短练习</a>。总入口可按概念搜索；<a href="../../reference/chapter6.html">第六章总结与速查</a>与<a href="../../reference/multi-layer-net.html">MultiLayerNet代码梳理</a>已接入，可离线打开与打印。</p>
+<h2 id="按章阅读">按章阅读</h2>
+<table>
+<thead>
+<tr>
+<th>笔记</th>
+<th>教材范围（书内页码）</th>
+<th>对应自己的代码</th>
+<th>一句话主线</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="01-Python%E5%85%A5%E9%97%A8.html">第1章：Python入门</a></td>
+<td>1—20页</td>
+<td><a href="https://github.com/glance02/DeepLearning-MuLi-Notes/tree/main/mycode/%E5%85%A5%E9%97%A8">入门目录</a></td>
+<td>用数组表达数据，用函数和类组织计算</td>
+</tr>
+<tr>
+<td><a href="02-%E6%84%9F%E7%9F%A5%E6%9C%BA.html">第2章：感知机</a></td>
+<td>21—36页</td>
+<td><a href="../../mycode/chapter2.ipynb">chapter2.ipynb</a></td>
+<td>加权求和、加偏置，再作阈值判断</td>
+</tr>
+<tr>
+<td><a href="03-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第3章：神经网络</a></td>
+<td>37—79页</td>
+<td><a href="../../mycode/chapter3.ipynb">chapter3.ipynb</a></td>
+<td>把多层网络写成矩阵运算，完成推理</td>
+</tr>
+<tr>
+<td><a href="04-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%9A%84%E5%AD%A6%E4%B9%A0.html">第4章：神经网络的学习</a></td>
+<td>81—119页</td>
+<td><a href="../../mycode/chapter4.ipynb">chapter4.ipynb</a></td>
+<td>用损失评价预测，用梯度指导参数调整，再评价泛化</td>
+</tr>
+<tr>
+<td><a href="05-%E8%AF%AF%E5%B7%AE%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%B3%95.html">第5章：误差反向传播法</a></td>
+<td>121—161页</td>
+<td><a href="../../mycode/chapter5.ipynb">chapter5.ipynb</a></td>
+<td>用链式法则逐层高效求梯度，再用数值梯度检查实现</td>
+</tr>
+<tr>
+<td><a href="06-%E4%B8%8E%E5%AD%A6%E4%B9%A0%E7%9B%B8%E5%85%B3%E7%9A%84%E6%8A%80%E5%B7%A7.html">第6章：与学习相关的技巧</a></td>
+<td>163—200页</td>
+<td><a href="../../mycode/chapter6.ipynb">chapter6.ipynb</a>、<a href="../../mycode/common/multi_layer_net.py">MultiLayerNet</a></td>
+<td>优化器、初始化、BN、正则化与超参数验证</td>
+</tr>
+<tr>
+<td><a href="07-%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第7章：卷积神经网络</a></td>
+<td>7.1—7.5</td>
+<td><a href="../../mycode/chapter7.ipynb">chapter7.ipynb</a></td>
+<td>卷积与池化的形状、反向传播、网络组装及训练</td>
+</tr>
+</tbody>
+</table>
+<p>本 PDF 的阅读器页码比书内页码多25，例如书内107页对应 PDF 第132页。笔记以教材小节号和书内页码定位。</p>
+<h2 id="已学内容概览">已学内容概览</h2>
+<pre><code class="language-text">Python / NumPy：怎样保存数据、执行计算？
+       ↓
+感知机：给定参数，怎样根据输入输出 0 或 1？
+       ↓
+神经网络：怎样用矩阵运算和非线性激活完成多层计算？
+       ↓
+前向传播：输入 → 预测
+       ↓
+损失函数：预测与正确答案相差多少？
+       ↓
+梯度：参数稍微变化时，损失怎样变化？
+       ↓
+梯度下降：据此反复调整参数
+</code></pre>
+<p>第3章使用已经训练好的参数做 MNIST 推理；第4章建立参数学习流程；第5章用反向传播高效计算同样含义的梯度。每次前向传播或调用 gradient() 本身都不会完成训练循环中的参数更新。</p>
+<h2 id="复习要点">复习要点</h2>
+<ol>
+<li><code>*</code> 是逐元素乘法，<code>np.dot</code> 在这里用于内积或矩阵乘法；计算前先看 <code>shape</code>。</li>
+<li>网络原始分数、softmax 概率、<code>argmax</code> 类别编号是三种不同的结果。</li>
+<li>单样本与批处理的差别，主要体现在样本轴、归一化的轴和损失是否取平均。</li>
+<li>梯度指向局部上升最快的方向；梯度下降减去梯度，步长过大仍可能使损失上升。</li>
+<li>数值梯度应一次只扰动一个浮点参数，计算完恢复原值。</li>
+<li>反向传播传递的是最终损失对各变量的导数；每层利用本地偏导和前向缓存计算，参数更新另做。</li>
+</ol>
+<p>这里列的是通用易错点和代码观察，不代表已经确认你犯过这些理解错误。</p>
+<h2 id="当前学习位置">当前学习位置</h2>
+<ul>
+<li>2026-11-12，第七章读到7.5，已补齐CNN前后向并开始训练；首轮train=0.9177、test=0.9173为用户报告，尚未确认50轮完成。下次先看训练结果，再进入7.6。</li>
+<li><a href="07-%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第七章笔记</a>、<a href="../../reference/chapter7.html">速查</a>和<a href="../../lessons/0017-cnn-epoch-updates.html">epoch短复习</a>已补齐；运行进度与独立理解分别记录。</li>
+<li>已写SGD、Momentum、AdaGrad、Adam；Adam以先知道如何使用为目标，公式题暂缓。</li>
+<li>已运行初始化与激活值直方图，讨论Xavier、He及ReLU图；BN读过概念但未在自己的网络中实现。</li>
+<li>已自行手敲<code>common/layers.py</code>与基础<code>common/multi_layer_net.py</code>，报告参数/梯度形状、前向与损失测试成功；你仍明确觉得文件里有些内容没懂。</li>
+<li>七层网络用300个训练样本、SGD(lr=0.01)运行并保存曲线，训练准确率接近1、测试图约0.76，支持当前实验出现过拟合。图读数为近似，不当作精确最终指标。</li>
+<li>优先回查<a href="../../reference/multi-layer-net.html">MultiLayerNet代码手册</a>；短课<a href="../../lessons/0012-multilayernet-parameters.html">12：参数与层</a>、<a href="../../lessons/0013-multilayernet-training.html">13：一次更新</a>每次选一个。</li>
+<li>已运行L2与Dropout实验，保存曲线和最后打印结果；<a href="06-%E4%B8%8E%E5%AD%A6%E4%B9%A0%E7%9B%B8%E5%85%B3%E7%9A%84%E6%8A%80%E5%B7%A7.html">完整笔记</a>补齐了惩罚项、mask与读图解释。</li>
+<li>超参数验证与最优化部分已阅读，本节按自己的安排不实际敲代码；以后调参时再回查验证集与随机搜索流程。</li>
+<li>第五章2026-10-31的97.895%/97.04%训练记录保留在<a href="05-%E8%AF%AF%E5%B7%AE%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%B3%95.html">第五章笔记</a>，与本次300样本实验区分。</li>
+</ul>
+<p>后续辅导状态见 <a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/NOTES.md">NOTES.md</a>，已有理解记录见 <a href="https://github.com/glance02/DeepLearning-MuLi-Notes/tree/main/learning-records">learning-records</a>。笔记中的参考答案不作为掌握证明。</p></article>
+<footer class="footer"><a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/notes/%E6%96%8B%E8%97%A4-%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8/00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.md">在 GitHub 阅读 Markdown 原文</a>
+ · <a href="../../reference/index.html">返回手边册</a></footer></main></div></body></html>

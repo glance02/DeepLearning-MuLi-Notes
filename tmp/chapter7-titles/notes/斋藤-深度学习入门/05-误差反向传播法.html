@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第5章：误差反向传播法 · 深度学习手边册</title>
+<link rel="stylesheet" href="../../assets/teach.css">
+<link rel="stylesheet" href="../../assets/site-notes.css">
+<link rel="stylesheet" href="../../assets/code-highlight.css">
+<script src="../../assets/teach.js" defer></script>
+<script src="../../assets/vendor/highlight/highlight.min.js" defer></script>
+<script src="../../assets/code-highlight.js" defer></script>
+<script src="../../assets/site-math.js" defer></script>
+<script src="../../assets/vendor/mathjax/tex-svg-full.js" defer></script></head>
+<body><div class="layout"><aside class="sidebar">
+<a class="brand" href="../../reference/index.html"><small>DEEP LEARNING / NOTES</small>深度学习 · 手边册</a>
+<p class="side-label">斋藤 · 学习笔记</p><nav class="side-links" aria-label="章节导航"><a href="00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.html">《深度学习入门》学习笔记</a><a href="01-Python%E5%85%A5%E9%97%A8.html">第1章：Python入门</a><a href="02-%E6%84%9F%E7%9F%A5%E6%9C%BA.html">第2章：感知机</a><a href="03-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第3章：神经网络</a><a href="04-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%9A%84%E5%AD%A6%E4%B9%A0.html">第4章：神经网络的学习</a><a href="05-%E8%AF%AF%E5%B7%AE%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%B3%95.html" aria-current="page">第5章：误差反向传播法</a><a href="06-%E4%B8%8E%E5%AD%A6%E4%B9%A0%E7%9B%B8%E5%85%B3%E7%9A%84%E6%8A%80%E5%B7%A7.html">第6章：与学习相关的技巧</a><a href="07-%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第7章：卷积神经网络</a></nav>
+<p class="side-label">回查与练习</p><nav class="side-links">
+<a href="../../reference/index.html">公式 · 概念 · 代码</a>
+<a href="../../reference/index.html#review">交互短练习</a></nav>
+<button class="secondary print-button" data-print type="button">打印当前页</button></aside>
+<main class="main reading"><header class="hero"><p class="eyebrow">STUDY NOTES</p><h1>第5章：误差反向传播法</h1>
+<p class="lead">斋藤康毅《深度学习入门》 · 结合自己的代码逐章回顾。</p></header>
+<details class="note-toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#第5章误差反向传播法">第5章：误差反向传播法</a><ul>
+<li><a href="#本章概览">本章概览</a></li>
+<li><a href="#5152计算图与链式法则">5.1—5.2：计算图与链式法则</a></li>
+<li><a href="#5354加法层与乘法层">5.3—5.4：加法层与乘法层</a><ul>
+<li><a href="#乘法层计算示例">乘法层计算示例</a></li>
+<li><a href="#多分支计算图示例">多分支计算图示例</a></li>
+</ul>
+</li>
+<li><a href="#55激活函数层">5.5：激活函数层</a><ul>
+<li><a href="#relu层">ReLU层</a></li>
+<li><a href="#sigmoid层">Sigmoid层</a></li>
+</ul>
+</li>
+<li><a href="#561affine层">5.6.1：Affine层</a><ul>
+<li><a href="#输入梯度的推导">输入梯度的推导</a></li>
+<li><a href="#权重梯度的推导">权重梯度的推导</a></li>
+</ul>
+</li>
+<li><a href="#562批量-affine-与偏置求和">5.6.2：批量 Affine 与偏置求和</a></li>
+<li><a href="#563softmax-with-loss-层">5.6.3：Softmax-with-Loss 层</a></li>
+<li><a href="#571572twolayernet的实现">5.7.1—5.7.2：TwoLayerNet的实现</a></li>
+<li><a href="#573梯度确认">5.7.3：梯度确认</a></li>
+<li><a href="#574训练配置与结果">5.7.4：训练配置与结果</a><ul>
+<li><a href="#评价间隔与输出次数">评价间隔与输出次数</a></li>
+</ul>
+</li>
+<li><a href="#58小结">5.8：小结</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</details>
+<article class="note-content"><span id="第5章误差反向传播法" hidden>第5章：误差反向传播法</span>
+<p>更新：2026-11-06。教材书内121—161页，对应 PDF 第146—186页；自己的实现见 <a href="../../mycode/chapter5.ipynb">chapter5.ipynb</a>。</p>
+<p>回查入口：<a href="../../reference/chapter5.html">第5章 HTML 手册</a> · <a href="../../lessons/0009-backprop-review.html">章末短练习</a> · <a href="../../lessons/0007-mul-layer-backward.html">乘法层短课</a> · <a href="../../lessons/0008-affine-backward.html#affine-513">Affine 推导短课</a>。</p>
+<h2 id="本章概览">本章概览</h2>
+<p>第4章已经建立学习流程：抽取 mini-batch → 求损失对参数的梯度 → 更新参数 → 重复。第5章把求梯度的方法换成误差反向传播法，基本的参数更新规则保持为：</p>
+<div class="arithmatex">\[
+W\leftarrow W-\eta\frac{\partial L}{\partial W}
+\]</div>
+<p>反向传播计算梯度；真正改变参数的是训练循环里的更新语句。数值梯度保留用于梯度确认。</p>
+<h2 id="5152计算图与链式法则">5.1—5.2：计算图与链式法则</h2>
+<p>教材：<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=146">5.1 计算图，书内121—126页</a>；<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=152">5.2 链式法则，书内127—130页</a>。</p>
+<ul>
+<li>节点：一次局部计算，例如加法、乘法、激活函数。</li>
+<li>正向传播：按依赖顺序计算数值，最终得到损失。</li>
+<li>反向传播：从最终损失出发，沿相反方向传递导数。</li>
+<li>各节点只需知道本地运算、前向保存的信息，以及后面传来的导数。</li>
+</ul>
+<p>若局部运算为 <span class="arithmatex">\(y=f(x)\)</span>，最终损失为 <span class="arithmatex">\(L\)</span>，链式法则为：</p>
+<div class="arithmatex">\[
+\frac{\partial L}{\partial x}
+=\frac{\partial L}{\partial y}\frac{\partial y}{\partial x}
+\]</div>
+<p>在代码中，<code>dout</code> 表示最终损失对本层输出的导数，<code>dx</code> 表示最终损失对本层输入的导数。它们与输入、输出的普通数值不同。</p>
+<p>如果同一个变量经过多条路径影响损失，需要把各路径的导数贡献相加。广播、共享参数和矩阵乘法中的求和，都能用这个原则理解。</p>
+<p>反向过程从 <code>dout = 1</code> 开始，因为最终损失对自身的导数是 <span class="arithmatex">\(\partial L/\partial L=1\)</span>；其他节点接收的导数不一定为1。</p>
+<h2 id="5354加法层与乘法层">5.3—5.4：加法层与乘法层</h2>
+<p>教材：<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=155">5.3 反向传播，书内130—134页</a>；<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=160">5.4 简单层的实现，书内135—139页</a>。一手代码：<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch05/layer_naive.py">layer_naive.py</a>。</p>
+<table>
+<thead>
+<tr>
+<th>局部运算</th>
+<th>局部偏导</th>
+<th>反向计算</th>
+<th>前向需保存什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="arithmatex">\(z=x+y\)</span></td>
+<td><span class="arithmatex">\(\partial z/\partial x=1\)</span>，<span class="arithmatex">\(\partial z/\partial y=1\)</span></td>
+<td><code>dx=dout</code>，<code>dy=dout</code></td>
+<td>本例无需缓存输入</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(z=xy\)</span></td>
+<td><span class="arithmatex">\(\partial z/\partial x=y\)</span>，<span class="arithmatex">\(\partial z/\partial y=x\)</span></td>
+<td><code>dx=dout*y</code>，<code>dy=dout*x</code></td>
+<td>输入 <code>x</code>、<code>y</code></td>
+</tr>
+</tbody>
+</table>
+<p>乘法层的“翻转 x 和 y”是说：求 x 的导数时乘 y，求 y 的导数时乘 x。没有交换或修改保存的输入值。</p>
+<pre><code class="language-python">def backward(self, dout):
+    dx = dout * self.y
+    dy = dout * self.x
+    return dx, dy
+</code></pre>
+<h3 id="乘法层计算示例">乘法层计算示例</h3>
+<p><code>forward(3,4)</code> 后调用 <code>backward(2)</code>，结果为 <code>(8,6)</code>。固定 y=4，x 从3增加到3.1，乘积增加0.4，因为乘积对 x 的偏导数为4。若后面还有 <span class="arithmatex">\(L=5\times out\)</span>，传回该乘法层的 <code>dout</code> 就是5。</p>
+<h3 id="多分支计算图示例">多分支计算图示例</h3>
+<pre><code class="language-text">苹果单价、数量 → mul_apple_layer ─┐
+                               ├→ 加法层 → 税率乘法层 → 支付金额
+橘子单价、数量 → mul_orange_layer ┘
+</code></pre>
+<p>反向先经过税率层，再经过加法层，最后回到苹果和橘子两条分支。独立分支之间的计算先后可以交换。</p>
+<p>不同乘法层保存不同输入。例如苹果层保存 <code>(100,2)</code>，税率层保存 <code>(200,1.1)</code>。把两次反向计算都写成税率层，会使用错误的缓存；第二次应调用 <code>mul_apple_layer.backward(dapple_price)</code>。</p>
+<p><code>forward</code>、<code>backward</code> 的定义与调用要一致。你曾同时写成 <code>forword</code>、<code>backword</code>，名称匹配时仍可运行，但现已统一为教材拼写。<code>tax=1.1</code> 表示乘以含10%税的系数；<code>tax=1</code> 表示总价保持不变。</p>
+<h2 id="55激活函数层">5.5：激活函数层</h2>
+<p>教材：<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=164">ReLU，书内139—141页</a>；<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=166">Sigmoid，书内141—144页</a>。一手代码：<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/layers.py">common/layers.py</a>。</p>
+<h3 id="relu层">ReLU层</h3>
+<div class="arithmatex">\[
+y=\max(0,x),\qquad
+\frac{\partial L}{\partial x}=
+\begin{cases}
+\frac{\partial L}{\partial y},&amp;x&gt;0\\
+0,&amp;x\leq0
+\end{cases}
+\]</div>
+<p>ReLU 在0处不可导，教材实现选择该处反向传0。数组输入时逐元素处理：</p>
+<pre><code class="language-python"># forward
+self.mask = (x &lt;= 0)
+out = x.copy()
+out[self.mask] = 0
+
+# backward
+dout[self.mask] = 0
+dx = dout
+</code></pre>
+<p><code>mask</code> 是前向输入的布尔掩码；<code>True</code> 的位置表示反向时该位置传0。正向的 <code>copy()</code> 避免直接覆盖输入数组。</p>
+<h3 id="sigmoid层">Sigmoid层</h3>
+<div class="arithmatex">\[
+y=\frac{1}{1+e^{-x}},\qquad
+\frac{\partial y}{\partial x}
+=\frac{e^{-x}}{(1+e^{-x})^2}
+=y(1-y)
+\]</div>
+<p>所以：</p>
+<div class="arithmatex">\[
+\frac{\partial L}{\partial x}
+=\frac{\partial L}{\partial y}\,y(1-y)
+\]</div>
+<pre><code class="language-python">dx = dout * self.out * (1.0 - self.out)
+</code></pre>
+<p>前向把输出保存在 <code>self.out</code>。这说明缓存什么，取决于反向公式需要什么；乘法层保存输入，Sigmoid 层保存输出。</p>
+<h2 id="561affine层">5.6.1：Affine层</h2>
+<p>教材：<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=169">书内144—148页</a>；式（5.13）在书内146页（PDF 第171页）。保留书中的 <span class="arithmatex">\(X,Y,W,B,L\)</span> 符号：</p>
+<div class="arithmatex">\[
+Y=X\cdot W+B
+\]</div>
+<p>这里的 <span class="arithmatex">\(Y\)</span> 是本层加权求和的输出。在最后一个 Affine 层，它是类别得分；经过 Softmax 后才得到类别概率。</p>
+<h3 id="输入梯度的推导">输入梯度的推导</h3>
+<p>先看单个样本，<span class="arithmatex">\(X=(x_0,\ldots,x_{D-1})\)</span>，有 H 个输出。令 <span class="arithmatex">\(W_{ij}\)</span> 为输入 <span class="arithmatex">\(x_i\)</span> 到输出 <span class="arithmatex">\(y_j\)</span> 的权重：</p>
+<div class="arithmatex">\[
+y_j=\sum_{i=0}^{D-1}x_iW_{ij}+b_j
+\]</div>
+<p>同一个 <span class="arithmatex">\(x_i\)</span> 会影响多个输出，因此把所有输出路径的贡献相加：</p>
+<div class="arithmatex">\[
+\frac{\partial L}{\partial x_i}
+=\sum_{j=0}^{H-1}\frac{\partial L}{\partial y_j}
+\frac{\partial y_j}{\partial x_i}
+=\sum_{j=0}^{H-1}\frac{\partial L}{\partial y_j}W_{ij}
+\]</div>
+<p>矩阵乘法取一行和一列做乘积求和。将 <span class="arithmatex">\(W\)</span> 的第 i 行转成 <span class="arithmatex">\(W^{\mathsf T}\)</span> 的第 i 列，上式恰好成为：</p>
+<div class="arithmatex">\[
+\boxed{\frac{\partial L}{\partial X}
+=\frac{\partial L}{\partial Y}\cdot W^{\mathsf T}}
+\]</div>
+<h3 id="权重梯度的推导">权重梯度的推导</h3>
+<p>单个权重 <span class="arithmatex">\(W_{ij}\)</span> 只直接出现在第 j 个输出中，所以：</p>
+<div class="arithmatex">\[
+\frac{\partial L}{\partial W_{ij}}
+=\frac{\partial L}{\partial y_j}
+\frac{\partial y_j}{\partial W_{ij}}
+=x_i\frac{\partial L}{\partial y_j}
+\]</div>
+<p>将 X 排成一列，将输出梯度排成一行，相乘的第 i 行、第 j 列正好是上述结果：</p>
+<div class="arithmatex">\[
+\boxed{\frac{\partial L}{\partial W}
+=X^{\mathsf T}\cdot\frac{\partial L}{\partial Y}}
+\]</div>
+<p>这就是式（5.13）的两条公式。转置来自元素级链式法则所要求的排列方式；检查形状可以帮助核对排列。</p>
+<p><strong>NumPy 注意</strong>：一维数组 <code>(D,)</code> 的 <code>.T</code> 仍为 <code>(D,)</code>。上面的单样本推导用行/列向量说明排列；自己的 Affine 实现实际接收二维批输入 <code>(N,D)</code>，单样本可保留为 <code>(1,D)</code>。</p>
+<h2 id="562批量-affine-与偏置求和">5.6.2：批量 Affine 与偏置求和</h2>
+<p>教材：<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=173">书内148—150页</a>。</p>
+<table>
+<thead>
+<tr>
+<th>量</th>
+<th>形状</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="arithmatex">\(X\)</span></td>
+<td><code>(N,D)</code></td>
+<td>N 个样本，每个 D 个特征</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(W\)</span></td>
+<td><code>(D,H)</code></td>
+<td>共享权重</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(B\)</span></td>
+<td><code>(H,)</code></td>
+<td>共享偏置，广播到各样本</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(Y\)</span>、<span class="arithmatex">\(\partial L/\partial Y\)</span></td>
+<td><code>(N,H)</code></td>
+<td>输出及其传入梯度</td>
+</tr>
+</tbody>
+</table>
+<p>批量时，所有样本共享 W 和 B；每个参数的梯度要累计各样本的贡献：</p>
+<div class="arithmatex">\[
+\frac{\partial L}{\partial X_{ni}}
+=\sum_j\frac{\partial L}{\partial Y_{nj}}W_{ij},\qquad
+\frac{\partial L}{\partial W_{ij}}
+=\sum_nX_{ni}\frac{\partial L}{\partial Y_{nj}}
+\]</div>
+<div class="arithmatex">\[
+\frac{\partial L}{\partial B_j}
+=\sum_n\frac{\partial L}{\partial Y_{nj}}
+\]</div>
+<p>因此自己的代码是：</p>
+<pre><code class="language-python">dx = np.dot(dout, self.W.T)       # (N,H) @ (H,D) -&gt; (N,D)
+self.dW = np.dot(self.x.T, dout)  # (D,N) @ (N,H) -&gt; (D,H)
+self.db = np.sum(dout, axis=0)    # (N,H) -&gt; (H,)
+return dx
+</code></pre>
+<p>教材例子中，若 <code>dout=[[1,2,3],[4,5,6]]</code>，则 <code>db=[5,7,9]</code>。前向偏置广播给每个样本，反向就把各样本的导数按列累加回来。</p>
+<p><code>dx</code> 返回给前一层；<code>dW</code>、<code>db</code> 存在层对象中，之后由网络收集。这里还没有更新参数。</p>
+<h2 id="563softmax-with-loss-层">5.6.3：Softmax-with-Loss 层</h2>
+<p>教材：<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=175">书内150—153页</a>。</p>
+<p>沿用教材：<span class="arithmatex">\(a\)</span> 是进入 Softmax 的得分，<span class="arithmatex">\(y\)</span> 是概率，<span class="arithmatex">\(t\)</span> 是 one-hot 标签：</p>
+<div class="arithmatex">\[
+y_k=\frac{e^{a_k}}{\sum_j e^{a_j}},\qquad
+L=-\sum_k t_k\log y_k
+\]</div>
+<p>这两个运算组合后，单样本的反向结果为：</p>
+<div class="arithmatex">\[
+\frac{\partial L}{\partial a_k}=y_k-t_k
+\]</div>
+<p>例如 <code>y=[0.3,0.2,0.5]</code>、<code>t=[0,1,0]</code>，传回得分端的梯度为 <code>[0.3,-0.8,0.5]</code>。它是最终损失对得分的梯度；不能把 <code>y-t</code> 当成任意单独 Softmax 运算的反向公式。</p>
+<p>一批 N 个样本采用平均损失，因此：</p>
+<div class="arithmatex">\[
+L=-\frac{1}{N}\sum_{n=0}^{N-1}\sum_k t_{nk}\log y_{nk},\qquad
+\frac{\partial L}{\partial a_{nk}}=\frac{y_{nk}-t_{nk}}{N}
+\]</div>
+<p>n是样本索引，k是类别索引。损失取样本平均，梯度也包含1/N，对应以下代码：</p>
+<pre><code class="language-python">batch_size = self.t.shape[0]
+dx = (self.y - self.t) / batch_size
+</code></pre>
+<p>这里除以的是样本数。这个平均因子会随导数传到前面的层，Affine 层不再另外除以 N。当前 notebook 使用 one-hot 标签，并从 <code>lastLayer.backward(1)</code> 开始，符合上述实现的使用方式。</p>
+<h2 id="571572twolayernet的实现">5.7.1—5.7.2：TwoLayerNet的实现</h2>
+<p>教材：<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=179">书内154—158页</a>；一手实现：<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch05/two_layer_net.py">two_layer_net.py</a>。</p>
+<pre><code class="language-text">forward： X -&gt; Affine1 -&gt; Relu1 -&gt; Affine2 -&gt; SoftmaxWithLoss -&gt; L
+backward：X &lt;- Affine1 &lt;- Relu1 &lt;- Affine2 &lt;- SoftmaxWithLoss &lt;- 1
+</code></pre>
+<p><code>predict()</code> 走到最后一个 Affine 层，返回得分；<code>loss()</code> 在其后接 Softmax-with-Loss。仅判断类别时，可以直接对得分按行取 argmax。</p>
+<p><code>gradient()</code> 的步骤：</p>
+<ol>
+<li><code>self.loss(x,t)</code> 完成前向计算，保存本轮反向需要的缓存。</li>
+<li>从 <code>dout=1</code> 开始调用损失层的反向传播。</li>
+<li>把 <code>self.layers.values()</code> 转成列表、反转，依次调用各层的 <code>backward()</code>。</li>
+<li>收集 Affine1、Affine2 的 <code>dW</code>、<code>db</code>，返回四项梯度字典。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>参数与梯度</th>
+<th>当前训练网络的形状</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>W1</code> / <code>grads['W1']</code></td>
+<td><code>(784,50)</code></td>
+</tr>
+<tr>
+<td><code>b1</code> / <code>grads['b1']</code></td>
+<td><code>(50,)</code></td>
+</tr>
+<tr>
+<td><code>W2</code> / <code>grads['W2']</code></td>
+<td><code>(50,10)</code></td>
+</tr>
+<tr>
+<td><code>b2</code> / <code>grads['b2']</code></td>
+<td><code>(10,)</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>self.params</code> 的数组被传给 Affine 层，层对象持有同一份参数数组；训练循环中的 <code>-=</code> 原地更新这些数组，下一次前向会用到更新后的参数。</p>
+<p>你修正过的键名：<code>grads['W1']</code> 应读取 <code>self.layers['Affine1'].dW</code>。当前层名称是 <code>Affine1</code>、<code>Relu1</code>、<code>Affine2</code>，没有名为 <code>Affine</code> 的键。改类定义后，需重新运行定义单元格并重新创建实例。</p>
+<h2 id="573梯度确认">5.7.3：梯度确认</h2>
+<p>教材：<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=183">书内158—159页</a>；一手代码：<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch05/gradient_check.py">gradient_check.py</a>。</p>
+<p>固定同一个网络参数位置、同一批输入和标签，分别计算反向传播梯度和数值梯度。</p>
+<p>对一组包含P个元素的参数，将对应梯度按相同顺序展开，其平均绝对差为：</p>
+<div class="arithmatex">\[
+D=\frac{1}{P}\sum_{i=1}^{P}
+\left|g_i^{\mathrm{backprop}}-g_i^{\mathrm{numerical}}\right|
+\]</div>
+<p>P是这组参数的元素数，不是batch大小。代码分别对W1、b1、W2、b2计算D：</p>
+<pre><code class="language-python">grad_numerical = network.numerical_gradient(x_batch, t_batch)
+grad_backprop = network.gradient(x_batch, t_batch)
+
+for key in grad_numerical:
+    diff = np.average(np.abs(grad_backprop[key] - grad_numerical[key]))
+    print(key + ':' + str(diff))
+</code></pre>
+<p>每组参数先逐元素相减，再取绝对值，最后求平均。取绝对值可以避免正负误差相互抵消。比较期间不更新参数；数值梯度内部扰动后恢复原值。</p>
+<p>你保存的前三个 MNIST 样本上的检查结果为：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>平均绝对差</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>W1</td>
+<td><code>4.299750694956092e-10</code></td>
+</tr>
+<tr>
+<td>b1</td>
+<td><code>2.7356883460860973e-09</code></td>
+</tr>
+<tr>
+<td>W2</td>
+<td><code>4.773980115833779e-09</code></td>
+</tr>
+<tr>
+<td>b2</td>
+<td><code>1.4008570150964017e-07</code></td>
+</tr>
+</tbody>
+</table>
+<p>这些结果支持当前样本上的两种实现很接近。不要求与教材输出逐位相同：随机初始化、中心差分近似、浮点精度和 ReLU 折点都可能影响差值。</p>
+<h2 id="574训练配置与结果">5.7.4：训练配置与结果</h2>
+<p>教材：<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=184">书内159—160页</a>；一手代码：<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch05/train_neuralnet.py">train_neuralnet.py</a>。</p>
+<p>以下为2026-10-31的训练记录：784→50→10、ReLU 隐藏层、batch=100、学习率0.1、10000次更新，数据设置为 <code>normalize=True, one_hot_label=True</code>。</p>
+<pre><code class="language-python">grad = network.gradient(x_batch, t_batch)
+for key in ('W1', 'b1', 'W2', 'b2'):
+    network.params[key] -= learning_rate * grad[key]
+</code></pre>
+<p>参数总数为 <code>784*50+50+50*10+10=39760</code>。中心差分每个参数需要两次损失计算，求一次完整梯度约需79520次损失计算；反向传播求一次完整梯度只需一次前向和一次反向，并复用中间结果。训练循环还会在更新后额外算一次损失用于记录。</p>
+<p>你报告当次约20秒完成；这是当时机器与运行条件下的耗时，不是固定基准。当次保存的最后一条打印为：</p>
+<pre><code class="language-text">train acc, test acc | 0.97895, 0.9704
+</code></pre>
+<p>即训练准确率97.895%、测试准确率97.04%，相差0.855个百分点。准确率整体上升，中间小幅波动与随机 mini-batch 更新相符。</p>
+<h3 id="评价间隔与输出次数">评价间隔与输出次数</h3>
+<p>训练集60000张、batch为100，按样本量折算约600次更新为一个 epoch。这里使用有放回随机抽样，不保证每600次恰好遍历所有样本。</p>
+<pre><code class="language-python">if i % iter_per_epoch == 0:
+    ...
+</code></pre>
+<p>i 从0开始，所以打印位置为 <code>0,600,...,9600</code>，共17次。第一行是第一次更新后的评价；最后一行是第9601次更新后的评价，不能直接说它是第10000次更新后的准确率。10000次更新按样本量折算约16.67个 epoch。</p>
+<h2 id="58小结">5.8：小结</h2>
+<table>
+<thead>
+<tr>
+<th>遇到的问题</th>
+<th>回到哪个概念</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dout</code> 是什么</td>
+<td>最终损失对本层输出的导数</td>
+</tr>
+<tr>
+<td>为什么要保存 <code>self.x</code>、<code>mask</code>、<code>self.out</code></td>
+<td>反向公式要用本轮前向的信息</td>
+</tr>
+<tr>
+<td>为什么会相加</td>
+<td>同一变量通过多条路径影响损失</td>
+</tr>
+<tr>
+<td>Affine 为什么要转置</td>
+<td>元素级偏导按矩阵乘法所需位置排列</td>
+</tr>
+<tr>
+<td><code>db</code> 为什么 <code>axis=0</code></td>
+<td>共享偏置累计各样本贡献</td>
+</tr>
+<tr>
+<td>梯度计算后参数变了吗</td>
+<td><code>gradient()</code> 只求梯度；<code>-=</code> 才更新</td>
+</tr>
+<tr>
+<td>为什么仍保留数值梯度</td>
+<td>实现简单，供梯度确认作对照</td>
+</tr>
+</tbody>
+</table>
+<p>已独立核对的乘法层理解见 <a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/learning-records/0010-mul-layer-backward-calculation.md">学习记录0010</a>。本章读完、代码写出、训练跑通是进度；各层公式能否独立推导可通过 <a href="../../lessons/0009-backprop-review.html">章末短练习</a> 按需检查。练习页面不会自动写入掌握记录。</p>
+<p>想追问时，直接发出具体公式或代码行；下一步先回忆当前不熟的一处即可。</p></article>
+<footer class="footer"><a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/notes/%E6%96%8B%E8%97%A4-%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8/05-%E8%AF%AF%E5%B7%AE%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%B3%95.md">在 GitHub 阅读 Markdown 原文</a>
+ · <a href="../../reference/index.html">返回手边册</a></footer></main></div></body></html>

@@ -1,0 +1,12 @@
+.net-map{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:18px 0}
+.net-node{padding:14px;border:1px solid var(--line);border-top:3px solid var(--accent);background:white;min-width:0}
+.net-node strong,.net-node span{display:block}.net-node strong{font-size:13px}.net-node span{font:12px/1.8 var(--mono);overflow-wrap:anywhere}.net-node small{font-size:11px;color:var(--muted)}
+.net-node.output{border-top-color:var(--orange)}.net-stat{font:13px var(--mono);color:var(--accent);margin:14px 0}
+.net-methods{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.net-methods button{font:12px var(--mono);background:white;color:var(--accent);padding:7px 11px}.net-methods button[aria-pressed=true]{background:var(--accent);color:white}
+.net-call{border:1px solid var(--line);background:#f7f8f3;padding:18px;margin:16px 0}.net-call h3{margin:0 0 10px}.net-call pre{background:white}.net-call [data-call-flow]{font:12px/1.9 var(--mono);overflow-wrap:anywhere}
+.net-call [data-call-effect]{font-size:13px;margin-bottom:0}.net-figure{margin:20px 0}.net-figure img{display:block;max-width:100%;height:auto;background:white;border:1px solid var(--line)}.net-figure figcaption{font-size:12px;color:var(--muted);margin-top:9px}
+.net-key{display:inline-block;font:11px var(--mono);color:var(--accent);border:1px solid #b9cec1;padding:2px 7px;border-radius:3px}.net-links{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;margin:15px 0}
+.net-source{white-space:pre;max-height:600px;overflow:auto}.net-source code{font-size:11px}.net-method-table td:first-child{font-family:var(--mono)}.net-prose{max-width:770px}
+@media(max-width:720px){.net-map{grid-template-columns:repeat(2,minmax(0,1fr))}.net-node{padding:10px}.net-call{padding:13px}.net-methods button{font-size:11px}.net-source{max-height:420px}}
+@media(max-width:400px){.net-map{grid-template-columns:1fr}}
+@media print{.net-methods,.net-controls{display:none!important}.net-map{grid-template-columns:repeat(3,minmax(0,1fr));break-inside:avoid}.net-call{break-inside:avoid}.net-source{max-height:none;white-space:pre-wrap;overflow:visible}.net-figure{break-inside:avoid}.net-figure img{max-height:95mm;width:auto;max-width:100%}.net-links{display:none}}

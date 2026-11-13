@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第2章：感知机 · 深度学习手边册</title>
+<link rel="stylesheet" href="../../assets/teach.css">
+<link rel="stylesheet" href="../../assets/site-notes.css">
+<link rel="stylesheet" href="../../assets/code-highlight.css">
+<script src="../../assets/teach.js" defer></script>
+<script src="../../assets/vendor/highlight/highlight.min.js" defer></script>
+<script src="../../assets/code-highlight.js" defer></script>
+<script src="../../assets/site-math.js" defer></script>
+<script src="../../assets/vendor/mathjax/tex-svg-full.js" defer></script></head>
+<body><div class="layout"><aside class="sidebar">
+<a class="brand" href="../../reference/index.html"><small>DEEP LEARNING / NOTES</small>深度学习 · 手边册</a>
+<p class="side-label">斋藤 · 学习笔记</p><nav class="side-links" aria-label="章节导航"><a href="00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.html">《深度学习入门》学习笔记</a><a href="01-Python%E5%85%A5%E9%97%A8.html">第1章：Python入门</a><a href="02-%E6%84%9F%E7%9F%A5%E6%9C%BA.html" aria-current="page">第2章：感知机</a><a href="03-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第3章：神经网络</a><a href="04-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%9A%84%E5%AD%A6%E4%B9%A0.html">第4章：神经网络的学习</a><a href="05-%E8%AF%AF%E5%B7%AE%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%B3%95.html">第5章：误差反向传播法</a><a href="06-%E4%B8%8E%E5%AD%A6%E4%B9%A0%E7%9B%B8%E5%85%B3%E7%9A%84%E6%8A%80%E5%B7%A7.html">第6章：与学习相关的技巧</a><a href="07-%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第7章：卷积神经网络</a></nav>
+<p class="side-label">回查与练习</p><nav class="side-links">
+<a href="../../reference/index.html">公式 · 概念 · 代码</a>
+<a href="../../reference/index.html#review">交互短练习</a></nav>
+<button class="secondary print-button" data-print type="button">打印当前页</button></aside>
+<main class="main reading"><header class="hero"><p class="eyebrow">STUDY NOTES</p><h1>第2章：感知机</h1>
+<p class="lead">斋藤康毅《深度学习入门》 · 结合自己的代码逐章回顾。</p></header>
+<details class="note-toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#第2章感知机">第2章：感知机</a><ul>
+<li><a href="#21感知机的计算">2.1：感知机的计算</a></li>
+<li><a href="#2223逻辑门权重与偏置">2.2—2.3：逻辑门、权重与偏置</a></li>
+<li><a href="#24线性可分性与xor">2.4：线性可分性与XOR</a></li>
+<li><a href="#25多层感知机与xor">2.5：多层感知机与XOR</a></li>
+<li><a href="#2627多层感知机的表达能力">2.6—2.7：多层感知机的表达能力</a></li>
+<li><a href="#易错点">易错点</a></li>
+<li><a href="#可选自测">可选自测</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</details>
+<article class="note-content"><span id="第2章感知机" hidden>第2章：感知机</span>
+<p><a href="00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.html">返回学习导航</a> · <a href="01-Python%E5%85%A5%E9%97%A8.html">上一章：Python入门</a> · <a href="03-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">下一章：神经网络</a></p>
+<p>教材：2.1—2.7，书内21—36页（PDF 第46—61页）。对应代码：<a href="../../mycode/chapter2.ipynb">chapter2.ipynb</a>，按单元格开头的注释或函数名定位。</p>
+<p>本章解决的问题：如何用简单的计算表达一个判断规则？进一步的问题是，单个判断器的能力在哪里结束，组合它们又能做什么？</p>
+<h2 id="21感知机的计算">2.1：感知机的计算</h2>
+<p>两个输入先乘上各自的权重，再相加，与阈值比较。对应式（2.1）：</p>
+<div class="arithmatex">\[
+y=\begin{cases}
+0,&amp;w_1x_1+w_2x_2\leq\theta\\
+1,&amp;w_1x_1+w_2x_2&gt;\theta
+\end{cases}
+\]</div>
+<ul>
+<li>输入 <code>x1, x2</code>：待判断的数据。</li>
+<li>权重 <code>w1, w2</code>：决定各输入如何影响加权总和。</li>
+<li>阈值 <code>theta</code>：加权总和要超过多高，才输出1。</li>
+</ul>
+<p>直觉：每个输入都投一张带权重的票，总票数超过门槛才通过。负权重可以起抑制作用。</p>
+<h2 id="2223逻辑门权重与偏置">2.2—2.3：逻辑门、权重与偏置</h2>
+<p>令 <code>b = -theta</code>，把阈值移到加权和一侧，得到式（2.2）：</p>
+<div class="arithmatex">\[
+a=w_1x_1+w_2x_2+b,\qquad
+y=\begin{cases}0,&amp;a\leq0\\1,&amp;a&gt;0\end{cases}
+\]</div>
+<p>与代码对应：</p>
+<pre><code class="language-python">x = np.array([x1, x2])
+w = np.array([0.5, 0.5])
+b = -0.7
+tmp = np.sum(w * x) + b
+</code></pre>
+<p><code>w * x</code> 先得到各项乘积，<code>np.sum</code> 再把它们加起来，最后加偏置。固定输入和权重时，偏置越大，加权总和越容易超过0。</p>
+<p>你的逻辑门参数如下。它们使用相同计算结构，只是参数不同；参数不是唯一解。</p>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>权重 <code>w</code></th>
+<th>偏置 <code>b</code></th>
+<th>输出1的条件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AND</code></td>
+<td><code>[0.5, 0.5]</code></td>
+<td><code>-0.7</code></td>
+<td>两个输入都是1</td>
+</tr>
+<tr>
+<td><code>NAND</code></td>
+<td><code>[-0.5, -0.5]</code></td>
+<td><code>0.7</code></td>
+<td>不同时为1</td>
+</tr>
+<tr>
+<td><code>OR</code></td>
+<td><code>[0.5, 0.5]</code></td>
+<td><code>-0.2</code></td>
+<td>至少一个输入是1</td>
+</tr>
+</tbody>
+</table>
+<p>例如 <code>AND(1, 0)</code> 的加权和为 <code>0.5 - 0.7 = -0.2</code>，输出0；<code>AND(1, 1)</code> 的加权和为 <code>1.0 - 0.7 = 0.3</code>，输出1。</p>
+<p>本章是人看着真值表手工选参数；第4章转向用数据和学习算法调整参数。</p>
+<h2 id="24线性可分性与xor">2.4：线性可分性与XOR</h2>
+<p>在二维输入平面中：</p>
+<div class="arithmatex">\[
+w_1x_1+w_2x_2+b=0
+\]</div>
+<p>是一条直线。单个感知机只能按照这条直线，把两侧分别判断为0和1。</p>
+<p>XOR 的正例是 <code>(1, 0)</code>、<code>(0, 1)</code>，反例是 <code>(0, 0)</code>、<code>(1, 1)</code>。同类点占据正方形的对角，无法用一条直线分开，所以只调整单层的权重和偏置也无法解决。</p>
+<p>这里的“做不了”指模型表达能力不足。不要理解成“还没找到一组足够好的参数”。</p>
+<h2 id="25多层感知机与xor">2.5：多层感知机与XOR</h2>
+<p>你的实现：</p>
+<pre><code class="language-python">def XOR(x1, x2):
+    s1 = NAND(x1, x2)
+    s2 = OR(x1, x2)
+    return AND(s1, s2)
+</code></pre>
+<p>中间两个条件分别是“不是同时为1”和“至少一个为1”，两者同时成立，就剩下“恰好一个为1”。</p>
+<table>
+<thead>
+<tr>
+<th><code>x1</code></th>
+<th><code>x2</code></th>
+<th><code>s1 = NAND</code></th>
+<th><code>s2 = OR</code></th>
+<th><code>AND(s1, s2)</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>这一结构先把原始输入变成中间表示 <code>(s1, s2)</code>，再对中间表示作判断。多层结构可以表达单层无法表达的规则。</p>
+<h2 id="2627多层感知机的表达能力">2.6—2.7：多层感知机的表达能力</h2>
+<p>NAND 门可以组合成其他逻辑电路，多层感知机也能通过组合简单模块表达复杂计算。本节先记住“组合与分层带来更强的表达能力”，不需要现在展开搭建计算机。</p>
+<p>本书按照有权重的层数命名：输入层不计入，所以 XOR 示例称为2层感知机，虽然图上有输入、中间、输出三列节点。</p>
+<h2 id="易错点">易错点</h2>
+<ul>
+<li><code>b = -theta</code>，不是 <code>b = theta</code>。</li>
+<li>本书约定在加权和<strong>大于</strong>0时输出1；等于0时输出0，边界符号会影响某些参数组合。</li>
+<li>单层的局限性不等于多层的局限性；增加层后，已经改变了模型结构。</li>
+<li>能表达某个规则，不代表已经知道怎样从数据自动学到它。</li>
+</ul>
+<h2 id="可选自测">可选自测</h2>
+<ol>
+<li>固定正权重，把偏置从 <code>-0.7</code> 改成 <code>-0.1</code>，输出1会更容易还是更难？</li>
+<li>不运行代码，算出 XOR 在输入 <code>(1, 1)</code> 时的 <code>s1</code>、<code>s2</code> 和输出。</li>
+<li>为什么不能靠不断试参数，让单层感知机学会 XOR？</li>
+</ol>
+<details>
+<summary>回忆后展开参考答案</summary>
+
+1. 更容易，因为同样的输入对应更大的加权和。
+2. `s1 = 0`、`s2 = 1`，最终输出0。
+3. 单层的决策边界是一条直线，XOR 的两类点不能被一条直线分开。
+
+</details></article>
+<footer class="footer"><a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/notes/%E6%96%8B%E8%97%A4-%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8/02-%E6%84%9F%E7%9F%A5%E6%9C%BA.md">在 GitHub 阅读 Markdown 原文</a>
+ · <a href="../../reference/index.html">返回手边册</a></footer></main></div></body></html>

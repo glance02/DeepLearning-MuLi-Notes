@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1100" role="img" aria-labelledby="title desc">
+  <title id="title">池化窗口如何经过 im2col 和 reshape</title>
+  <desc id="desc">两个四乘四通道中的彩色二乘二窗口被展开成 im2col 矩阵，每个空间位置的两通道窗口随后拆成两行，各自取最大值并恢复成两个二乘二输出特征图。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#3a665c"/>
+    </marker>
+    <style>
+      text{font-family:Arial,"Microsoft YaHei",sans-serif;fill:#25312e}
+      .title{font-size:23px;font-weight:700}.label{font-size:17px;font-weight:700}.small{font-size:13px}.tiny{font-size:11px}
+      .cell{stroke:#fff;stroke-width:2}.matrix-cell{stroke:#fff;stroke-width:2}
+      .p00{fill:#d9eee7}.p01{fill:#fbe5d3}.p10{fill:#dfe8fa}.p11{fill:#f2e1ef}
+      .c0{fill:#e7f3ef}.c1{fill:#fae9e4}.edge{stroke:#9bada5;stroke-width:1}
+      .arrow{stroke:#3a665c;stroke-width:2.5;fill:none;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1000" height="1100" fill="#fff"/>
+
+  <text x="48" y="46" class="title">输入：一张图像，两个通道（N=1，C=2）</text>
+  <text x="178" y="83" class="label">通道 C0</text>
+  <text x="448" y="83" class="label">通道 C1</text>
+
+  <g class="edge">
+    <rect x="120" y="98" width="44" height="44" class="cell p00"/><rect x="164" y="98" width="44" height="44" class="cell p00"/><rect x="208" y="98" width="44" height="44" class="cell p01"/><rect x="252" y="98" width="44" height="44" class="cell p01"/>
+    <rect x="120" y="142" width="44" height="44" class="cell p00"/><rect x="164" y="142" width="44" height="44" class="cell p00"/><rect x="208" y="142" width="44" height="44" class="cell p01"/><rect x="252" y="142" width="44" height="44" class="cell p01"/>
+    <rect x="120" y="186" width="44" height="44" class="cell p10"/><rect x="164" y="186" width="44" height="44" class="cell p10"/><rect x="208" y="186" width="44" height="44" class="cell p11"/><rect x="252" y="186" width="44" height="44" class="cell p11"/>
+    <rect x="120" y="230" width="44" height="44" class="cell p10"/><rect x="164" y="230" width="44" height="44" class="cell p10"/><rect x="208" y="230" width="44" height="44" class="cell p11"/><rect x="252" y="230" width="44" height="44" class="cell p11"/>
+    <rect x="390" y="98" width="44" height="44" class="cell p00"/><rect x="434" y="98" width="44" height="44" class="cell p00"/><rect x="478" y="98" width="44" height="44" class="cell p01"/><rect x="522" y="98" width="44" height="44" class="cell p01"/>
+    <rect x="390" y="142" width="44" height="44" class="cell p00"/><rect x="434" y="142" width="44" height="44" class="cell p00"/><rect x="478" y="142" width="44" height="44" class="cell p01"/><rect x="522" y="142" width="44" height="44" class="cell p01"/>
+    <rect x="390" y="186" width="44" height="44" class="cell p10"/><rect x="434" y="186" width="44" height="44" class="cell p10"/><rect x="478" y="186" width="44" height="44" class="cell p11"/><rect x="522" y="186" width="44" height="44" class="cell p11"/>
+    <rect x="390" y="230" width="44" height="44" class="cell p10"/><rect x="434" y="230" width="44" height="44" class="cell p10"/><rect x="478" y="230" width="44" height="44" class="cell p11"/><rect x="522" y="230" width="44" height="44" class="cell p11"/>
+  </g>
+  <g class="small" text-anchor="middle">
+    <text x="142" y="126">1</text><text x="186" y="126">2</text><text x="230" y="126">3</text><text x="274" y="126">4</text>
+    <text x="142" y="170">5</text><text x="186" y="170">6</text><text x="230" y="170">7</text><text x="274" y="170">8</text>
+    <text x="142" y="214">9</text><text x="186" y="214">10</text><text x="230" y="214">11</text><text x="274" y="214">12</text>
+    <text x="142" y="258">13</text><text x="186" y="258">14</text><text x="230" y="258">15</text><text x="274" y="258">16</text>
+    <text x="412" y="126">101</text><text x="456" y="126">102</text><text x="500" y="126">103</text><text x="544" y="126">104</text>
+    <text x="412" y="170">105</text><text x="456" y="170">106</text><text x="500" y="170">107</text><text x="544" y="170">108</text>
+    <text x="412" y="214">109</text><text x="456" y="214">110</text><text x="500" y="214">111</text><text x="544" y="214">112</text>
+    <text x="412" y="258">113</text><text x="456" y="258">114</text><text x="500" y="258">115</text><text x="544" y="258">116</text>
+  </g>
+  <text x="625" y="128" class="small">同色的 2×2 格子</text><text x="625" y="150" class="small">是一个池化窗口。</text>
+  <text x="625" y="194" class="small">四种颜色代表</text><text x="625" y="216" class="small">四个空间位置。</text>
+  <path d="M500 292 V330" class="arrow"/>
+  <text x="520" y="317" class="small">每个窗口摊平</text>
+
+  <text x="48" y="366" class="title">im2col：同一位置的两个通道先放在同一行（4, 8）</text>
+  <text x="300" y="397" class="small" text-anchor="middle">通道 C0 的 2×2 窗口</text>
+  <text x="520" y="397" class="small" text-anchor="middle">通道 C1 的 2×2 窗口</text>
+  <g class="tiny" text-anchor="middle">
+    <text x="112" y="429">左上</text><text x="112" y="466">右上</text><text x="112" y="503">左下</text><text x="112" y="540">右下</text>
+  </g>
+  <g>
+    <rect x="185" y="407" width="220" height="34" class="matrix-cell p00"/><rect x="405" y="407" width="220" height="34" class="matrix-cell c1"/>
+    <rect x="185" y="444" width="220" height="34" class="matrix-cell p01"/><rect x="405" y="444" width="220" height="34" class="matrix-cell c1"/>
+    <rect x="185" y="481" width="220" height="34" class="matrix-cell p10"/><rect x="405" y="481" width="220" height="34" class="matrix-cell c1"/>
+    <rect x="185" y="518" width="220" height="34" class="matrix-cell p11"/><rect x="405" y="518" width="220" height="34" class="matrix-cell c1"/>
+  </g>
+  <g class="small" text-anchor="middle">
+    <text x="295" y="430">1　2　5　6</text><text x="515" y="430">101　102　105　106</text>
+    <text x="295" y="467">3　4　7　8</text><text x="515" y="467">103　104　107　108</text>
+    <text x="295" y="504">9　10　13　14</text><text x="515" y="504">109　110　113　114</text>
+    <text x="295" y="541">11　12　15　16</text><text x="515" y="541">111　112　115　116</text>
+  </g>
+  <path d="M500 570 V613" class="arrow"/>
+  <text x="520" y="594" class="label">reshape(-1, 4)</text>
+  <text x="48" y="640" class="small">把每行的 C0 四个数、C1 四个数拆开：一行变两行，每行正好一个窗口。</text>
+
+  <text x="112" y="681" class="small" text-anchor="middle">位置 / 通道</text>
+  <text x="355" y="681" class="small" text-anchor="middle">每行的四个数</text>
+  <text x="555" y="681" class="small" text-anchor="middle">max(axis=1)</text>
+  <g class="tiny">
+    <text x="62" y="715">左上 · C0</text><text x="62" y="746">左上 · C1</text><text x="62" y="777">右上 · C0</text><text x="62" y="808">右上 · C1</text>
+    <text x="62" y="839">左下 · C0</text><text x="62" y="870">左下 · C1</text><text x="62" y="901">右下 · C0</text><text x="62" y="932">右下 · C1</text>
+  </g>
+  <g>
+    <rect x="185" y="694" width="340" height="27" rx="4" class="c0"/><rect x="185" y="725" width="340" height="27" rx="4" class="c1"/>
+    <rect x="185" y="756" width="340" height="27" rx="4" class="c0"/><rect x="185" y="787" width="340" height="27" rx="4" class="c1"/>
+    <rect x="185" y="818" width="340" height="27" rx="4" class="c0"/><rect x="185" y="849" width="340" height="27" rx="4" class="c1"/>
+    <rect x="185" y="880" width="340" height="27" rx="4" class="c0"/><rect x="185" y="911" width="340" height="27" rx="4" class="c1"/>
+  </g>
+  <g class="small" text-anchor="middle">
+    <text x="355" y="713">1　2　5　6</text><text x="355" y="744">101　102　105　106</text>
+    <text x="355" y="775">3　4　7　8</text><text x="355" y="806">103　104　107　108</text>
+    <text x="355" y="837">9　10　13　14</text><text x="355" y="868">109　110　113　114</text>
+    <text x="355" y="899">11　12　15　16</text><text x="355" y="930">111　112　115　116</text>
+    <text x="555" y="713">6</text><text x="555" y="744">106</text><text x="555" y="775">8</text><text x="555" y="806">108</text>
+    <text x="555" y="837">14</text><text x="555" y="868">114</text><text x="555" y="899">16</text><text x="555" y="930">116</text>
+  </g>
+  <path d="M615 812 H684" class="arrow"/>
+  <text x="698" y="770" class="label">恢复输出图</text>
+  <text x="728" y="804" class="small">C0</text><text x="858" y="804" class="small">C1</text>
+  <g class="edge">
+    <rect x="700" y="817" width="52" height="52" class="cell p00"/><rect x="752" y="817" width="52" height="52" class="cell p01"/>
+    <rect x="700" y="869" width="52" height="52" class="cell p10"/><rect x="752" y="869" width="52" height="52" class="cell p11"/>
+    <rect x="830" y="817" width="52" height="52" class="cell p00"/><rect x="882" y="817" width="52" height="52" class="cell p01"/>
+    <rect x="830" y="869" width="52" height="52" class="cell p10"/><rect x="882" y="869" width="52" height="52" class="cell p11"/>
+  </g>
+  <g class="small" text-anchor="middle">
+    <text x="726" y="849">6</text><text x="778" y="849">8</text><text x="726" y="901">14</text><text x="778" y="901">16</text>
+    <text x="856" y="849">106</text><text x="908" y="849">108</text><text x="856" y="901">114</text><text x="908" y="901">116</text>
+  </g>
+  <text x="700" y="960" class="small">每个通道各自得到 2×2 输出</text>
+  <text x="48" y="1010" class="label">所以：pool_h * pool_w = 4 固定每行宽度；-1 自动算出总行数 8。</text>
+  <text x="48" y="1044" class="small">reshape 不改变数值，只把同一行里并排的通道窗口分成独立行。</text>
+</svg>

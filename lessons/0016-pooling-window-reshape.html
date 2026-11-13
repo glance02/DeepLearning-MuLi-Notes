@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="解释池化层中 reshape(-1, pool_h * pool_w) 如何把 im2col 结果分成独立窗口。">
 <title>短课16：池化窗口的形状</title>
-<link rel="stylesheet" href="../assets/teach.css">
+<link rel="stylesheet" href="../assets/teach.css"><link rel="stylesheet" href="../assets/chapter7.css">
 <link rel="stylesheet" href="../assets/code-highlight.css">
 <script src="../assets/teach.js" defer></script>
 <script src="../assets/vendor/highlight/highlight.min.js" defer></script>
 <script src="../assets/code-highlight.js" defer></script>
 </head>
-<body>
+<body class="cnn-guide">
 <div class="layout">
 <aside class="sidebar">
 <a class="brand" href="../reference/index.html"><small>DEEP LEARNING / CH 7</small>卷积神经网络</a>
@@ -42,7 +42,7 @@ out = np.max(col, axis=1)</code></pre>
 <section id="recall">
 <h2>检查理解</h2>
 <form class="quiz" data-answer="a" data-explanation="窗口大小决定每行保留多少个待比较元素；-1根据总元素数推导出窗口行数。">
-<fieldset><legend>窗口为 <code>2×2</code> 时，reshape 后每行有几个数？</legend>
+<fieldset><legend>窗口为 <code>2×2</code> 时，reshape 后每行代表什么？</legend>
 <label><input type="radio" name="q1" value="a">一个通道内的池化窗口</label>
 <label><input type="radio" name="q1" value="b">一张图像内的所有像素</label>
 </fieldset>

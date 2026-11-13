@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第7章：卷积神经网络 · 深度学习手边册</title>
+<link rel="stylesheet" href="../../assets/teach.css">
+<link rel="stylesheet" href="../../assets/site-notes.css">
+<link rel="stylesheet" href="../../assets/code-highlight.css">
+<script src="../../assets/teach.js" defer></script>
+<script src="../../assets/vendor/highlight/highlight.min.js" defer></script>
+<script src="../../assets/code-highlight.js" defer></script>
+<script src="../../assets/site-math.js" defer></script>
+<script src="../../assets/vendor/mathjax/tex-svg-full.js" defer></script></head>
+<body><div class="layout"><aside class="sidebar">
+<a class="brand" href="../../reference/index.html"><small>DEEP LEARNING / NOTES</small>深度学习 · 手边册</a>
+<p class="side-label">斋藤 · 学习笔记</p><nav class="side-links" aria-label="章节导航"><a href="00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.html">《深度学习入门》学习笔记</a><a href="01-Python%E5%85%A5%E9%97%A8.html">第1章：Python入门</a><a href="02-%E6%84%9F%E7%9F%A5%E6%9C%BA.html">第2章：感知机</a><a href="03-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第3章：神经网络</a><a href="04-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%9A%84%E5%AD%A6%E4%B9%A0.html">第4章：神经网络的学习</a><a href="05-%E8%AF%AF%E5%B7%AE%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%B3%95.html">第5章：误差反向传播法</a><a href="06-%E4%B8%8E%E5%AD%A6%E4%B9%A0%E7%9B%B8%E5%85%B3%E7%9A%84%E6%8A%80%E5%B7%A7.html">第6章：与学习相关的技巧</a><a href="07-%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html" aria-current="page">第7章：卷积神经网络</a></nav>
+<p class="side-label">回查与练习</p><nav class="side-links">
+<a href="../../reference/index.html">公式 · 概念 · 代码</a>
+<a href="../../reference/index.html#review">交互短练习</a></nav>
+<button class="secondary print-button" data-print type="button">打印当前页</button></aside>
+<main class="main reading"><header class="hero"><p class="eyebrow">STUDY NOTES</p><h1>第7章：卷积神经网络</h1>
+<p class="lead">斋藤康毅《深度学习入门》 · 结合自己的代码逐章回顾。</p></header>
+<details class="note-toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#第7章卷积神经网络">第7章：卷积神经网络</a><ul>
+<li><a href="#先用一张图串起来">先用一张图串起来</a></li>
+<li><a href="#71-整体结构cnn新增了什么">7.1 整体结构：CNN新增了什么</a></li>
+<li><a href="#72-卷积层先理解一个输出值">7.2 卷积层：先理解一个输出值</a><ul>
+<li><a href="#一个窗口的计算">一个窗口的计算</a></li>
+<li><a href="#通道与卷积核数不要混淆">通道与卷积核数不要混淆</a></li>
+<li><a href="#padding与stride决定窗口能放多少次">Padding与Stride决定窗口能放多少次</a></li>
+</ul>
+</li>
+<li><a href="#73-池化层每个通道独立缩小">7.3 池化层：每个通道独立缩小</a></li>
+<li><a href="#74-实现从窗口到矩阵再从梯度回窗口">7.4 实现：从窗口到矩阵，再从梯度回窗口</a><ul>
+<li><a href="#741743-im2col与卷积前向">7.4.1—7.4.3 im2col与卷积前向</a></li>
+<li><a href="#卷积反向复用affine的矩阵求导">卷积反向：复用Affine的矩阵求导</a></li>
+<li><a href="#col2im为什么要累加">col2im为什么要累加</a></li>
+<li><a href="#744-池化reshape一行只放一个通道的窗口">7.4.4 池化reshape：一行只放一个通道的窗口</a></li>
+<li><a href="#池化反向argmax记录路线">池化反向：argmax记录路线</a></li>
+</ul>
+</li>
+<li><a href="#75-simpleconvnet把层组装成网络">7.5 SimpleConvNet：把层组装成网络</a><ul>
+<li><a href="#输出与参数形状总表">输出与参数形状总表</a></li>
+<li><a href="#三个方法是一条调用链">三个方法是一条调用链</a></li>
+<li><a href="#python细节默认字典为什么用none">Python细节：默认字典为什么用None</a></li>
+</ul>
+</li>
+<li><a href="#训练循环一批一次更新一轮">训练循环：一批、一次更新、一轮</a><ul>
+<li><a href="#数据接口">数据接口</a></li>
+<li><a href="#一轮内部发生什么">一轮内部发生什么</a></li>
+<li><a href="#日志指标的含义">日志指标的含义</a></li>
+</ul>
+</li>
+<li><a href="#本次实验保存了17轮随后中断">本次实验：保存了17轮，随后中断</a></li>
+<li><a href="#回查入口与下一步">回查入口与下一步</a></li>
+<li><a href="#来源与代码">来源与代码</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</details>
+<article class="note-content"><span id="第7章卷积神经网络" hidden>第7章：卷积神经网络</span>
+<p><a href="00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.html">返回学习导航</a> · <a href="06-%E4%B8%8E%E5%AD%A6%E4%B9%A0%E7%9B%B8%E5%85%B3%E7%9A%84%E6%8A%80%E5%B7%A7.html">上一章</a> · <a href="../../reference/chapter7.html">图解速查</a> · <a href="../../mycode/chapter7.ipynb">自己的 Notebook</a></p>
+<blockquote>
+<p>本章主线：<strong>窗口提取局部信息 → 矩阵乘法批量计算 → 反向汇合梯度 → 用分类损失更新参数。</strong></p>
+<p>整理于2026-11-13，覆盖已读的7.1—7.5。Notebook保存17轮日志，随后KeyboardInterrupt；当前源码已设为20轮。7.6之后尚未确认阅读。</p>
+</blockquote>
+<h2 id="先用一张图串起来">先用一张图串起来</h2>
+<p><img alt="SimpleConvNet的层顺序与形状" src="../../assets/chapter7-network.svg"></p>
+<p>图中省略批次轴N。当前网络是：</p>
+<pre><code class="language-text">输入 → Conv1 → ReLU1 → Pool1 → Affine1 → ReLU2 → Affine2 → 分数
+                                                        ↓
+                                             SoftmaxWithLoss → 损失
+</code></pre>
+<p><code>predict(x)</code>返回分数；<code>loss(x,t)</code>才连接SoftmaxWithLoss。分类准确率可以直接对分数取argmax，不必先转成概率，因为softmax不改变类别大小顺序。</p>
+<h2 id="71-整体结构cnn新增了什么">7.1 整体结构：CNN新增了什么</h2>
+<p>全连接层把一张图展平后统一处理，连接权重不显式利用原来的局部空间关系。卷积层让相邻像素在窗口内一起参与计算，并让同一组权重在不同位置复用。</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>做什么</th>
+<th>是否有可学习参数</th>
+<th>是否改变形状</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Convolution</td>
+<td>局部窗口加权求和</td>
+<td>W、b</td>
+<td>由核数、窗口、步幅、填充决定</td>
+</tr>
+<tr>
+<td>ReLU</td>
+<td>负值归零，引入非线性</td>
+<td>无</td>
+<td>不改变</td>
+</tr>
+<tr>
+<td>Max Pooling</td>
+<td>每个通道内取局部最大值</td>
+<td>无</td>
+<td>通常缩小高宽，通道数不变</td>
+</tr>
+<tr>
+<td>Affine</td>
+<td>组合输入特征，生成新特征或分数</td>
+<td>W、b</td>
+<td>改变每个样本的特征维度</td>
+</tr>
+</tbody>
+</table>
+<p>CNN并没有抛弃第5章的训练框架：前向得到损失，反向得到梯度，优化器再更新参数。池化层可省略，靠近输出仍可使用全连接层。</p>
+<p>主教材：<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=226">7.1，图7-1与7-2</a>。</p>
+<h2 id="72-卷积层先理解一个输出值">7.2 卷积层：先理解一个输出值</h2>
+<h3 id="一个窗口的计算">一个窗口的计算</h3>
+<pre><code class="language-text">输入窗口       卷积核
+1  2           1   0
+3  4           0  -1
+
+输出 = 1×1 + 2×0 + 3×0 + 4×(-1) + b
+     = -3                 （取b=0）
+</code></pre>
+<p>在下一个位置，换一块输入窗口，仍使用同一个核。窗口内是对应位置相乘再求和，不是把两个2×2数组直接做矩阵乘法。教材代码不先翻转核，按严格数学定义属于互相关；深度学习中通常仍称卷积。</p>
+<h3 id="通道与卷积核数不要混淆">通道与卷积核数不要混淆</h3>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>记号 / 形状</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输入</td>
+<td><code>(N,C,H,W)</code></td>
+<td>N个样本，每个有C个通道</td>
+</tr>
+<tr>
+<td>卷积核</td>
+<td><code>(FN,C,FH,FW)</code></td>
+<td>FN个核，每个覆盖全部C个输入通道</td>
+</tr>
+<tr>
+<td>偏置</td>
+<td><code>(FN,)</code></td>
+<td>每个输出通道一个，空间位置共享</td>
+</tr>
+<tr>
+<td>输出</td>
+<td><code>(N,FN,OH,OW)</code></td>
+<td>一个核生成一个输出通道</td>
+</tr>
+</tbody>
+</table>
+<p>例如RGB输入C=3，一个5×5核实际有<code>3×5×5=75</code>个权重。30个核共有2250个权重、30个偏置，产生30个输出通道。<strong>核的输入通道数C必须匹配输入，核数FN决定输出通道数。</strong></p>
+<h3 id="padding与stride决定窗口能放多少次">Padding与Stride决定窗口能放多少次</h3>
+<ul>
+<li>Padding P：在高宽边缘各补P圈零，扩大边界处可覆盖的范围。</li>
+<li>Stride S：窗口每次移动S格，决定输出位置间隔。</li>
+</ul>
+<pre><code class="language-text">OH = (H + 2P - FH) // S + 1
+OW = (W + 2P - FW) // S + 1
+</code></pre>
+<p>这里按<code>im2col</code>的整数除法计完整窗口。当前网络H=W=28、FH=FW=5、P=0、S=1，所以OH=OW=24。若改成P=2、S=1，则高宽保持28。</p>
+<p>主教材：<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=228">7.2卷积层</a>。尺寸计算可对照<a href="../../mycode/common/util.py">自己的窗口工具</a>。</p>
+<h2 id="73-池化层每个通道独立缩小">7.3 池化层：每个通道独立缩小</h2>
+<p>最大池化在每个窗口取最大值，通道之间不求和。2×2、stride=2时，24×24变为12×12，30个通道仍是30个。</p>
+<p>池化对窗口内小幅位置变化具有一定鲁棒性：只要最大值仍在同一窗口，输出就不变。它不保证任意平移后输出都相同。</p>
+<p>池化没有W、b，但需要记录最大值来自哪里，反向时才能把损失梯度继续传给前面的卷积层。</p>
+<h2 id="74-实现从窗口到矩阵再从梯度回窗口">7.4 实现：从窗口到矩阵，再从梯度回窗口</h2>
+<h3 id="741743-im2col与卷积前向">7.4.1—7.4.3 im2col与卷积前向</h3>
+<p>im2col按“样本 → 输出位置 → 通道 → 窗口元素”的逻辑排列数据。<strong>一行是一个空间位置上、跨全部输入通道的窗口。</strong>相邻窗口可能重叠，因此原图中的元素会被复制到多行。</p>
+<pre><code class="language-text">输入 x            (N, C, H, W)
+窗口 col          (N*OH*OW, C*FH*FW)
+卷积核 W          (FN, C, FH, FW)
+展开的核 col_W    (C*FH*FW, FN)
+矩阵乘法结果      (N*OH*OW, FN)
+最终输出          (N, FN, OH, OW)
+</code></pre>
+<p>Notebook的两个输出可以自己算出来：</p>
+<table>
+<thead>
+<tr>
+<th>输入 / 窗口</th>
+<th>输出位置</th>
+<th>每行长度</th>
+<th>col形状</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>(1,3,7,7)</code> / 5×5，S=1，P=0</td>
+<td>1×3×3=9</td>
+<td>3×5×5=75</td>
+<td><code>(9,75)</code></td>
+</tr>
+<tr>
+<td><code>(10,3,7,7)</code> / 同上</td>
+<td>10×3×3=90</td>
+<td>75</td>
+<td><code>(90,75)</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-python">col = im2col(x, FH, FW, self.stride, self.pad)
+col_W = self.W.reshape(FN, -1).T
+out = np.dot(col, col_W) + self.b
+out = out.reshape(N, out_h, out_w, FN).transpose(0, 3, 1, 2)
+</code></pre>
+<p><code>W.reshape(FN,-1)</code>让每个核占一行，转置后一个核占一列。一行窗口乘一列核，得到该位置、该核的输出。偏置<code>(FN,)</code>广播到每一行。</p>
+<p>结果先恢复为<code>(N,OH,OW,FN)</code>，再把FN移到通道轴；<strong>reshape负责分组，transpose负责轴顺序。</strong>只reshape成<code>(N,FN,OH,OW)</code>会把元素排错。</p>
+<p>这种实现将大量窗口计算交给NumPy矩阵乘法，代价是展开窗口占用额外内存。具体排列见<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/util.py">作者im2col</a>，本项目使用<a href="../../mycode/common/util.py">自己的util.py</a>。</p>
+<h3 id="卷积反向复用affine的矩阵求导">卷积反向：复用Affine的矩阵求导</h3>
+<p>前向是<code>Y = A @ B + b</code>，A=col，B=col_W。先把输出梯度转换为与Y相同的二维排列，记为G：</p>
+<pre><code class="language-python">FN, C, FH, FW = self.W.shape
+G = dout.transpose(0, 2, 3, 1).reshape(-1, FN)
+
+self.db = G.sum(axis=0)
+dcol_W = self.col.T @ G
+self.dW = dcol_W.T.reshape(FN, C, FH, FW)
+dcol = G @ self.col_W.T
+
+dx = col2im(dcol, self.x.shape, FH, FW, self.stride, self.pad)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>梯度</th>
+<th>形状核对</th>
+<th>直观解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>db</td>
+<td><code>(FN,)</code></td>
+<td>一个偏置被多处使用，各处贡献相加</td>
+</tr>
+<tr>
+<td>dcol_W</td>
+<td><code>(C*FH*FW,FN)</code></td>
+<td>各窗口对同一核权重的贡献相加</td>
+</tr>
+<tr>
+<td>dW</td>
+<td><code>(FN,C,FH,FW)</code></td>
+<td>把展开权重的梯度恢复成原参数排列</td>
+</tr>
+<tr>
+<td>dcol</td>
+<td><code>(N*OH*OW,C*FH*FW)</code></td>
+<td>通过核权重，把上游梯度传回每个窗口</td>
+</tr>
+<tr>
+<td>dx</td>
+<td><code>(N,C,H,W)</code></td>
+<td>各窗口梯度汇合到原输入位置</td>
+</tr>
+</tbody>
+</table>
+<p>前向缓存<code>x、col、col_W</code>，分别用于输入形状恢复、权重梯度和窗口输入梯度。这里<code>dout</code>是损失对层输出的梯度，不是预测值或参数的更新量。</p>
+<h3 id="col2im为什么要累加">col2im为什么要累加</h3>
+<p>用一维重叠窗口看最清楚：</p>
+<pre><code class="language-text">输入          [a, b, c]
+窗口1         [a, b]    收到窗口梯度 [1, 2]
+窗口2            [b, c] 收到窗口梯度 [3, 4]
+汇回输入      [1, 5, 4]          b的贡献：2+3
+</code></pre>
+<p>一个变量通过多条路径影响损失，梯度需要求和。因此<code>col2im(im2col(x))</code>在有重叠时不会直接等于x，而会把重复出现的值累加；它在反向中用于汇回窗口梯度。</p>
+<p>对照<a href="../../mycode/chapter7.ipynb">自己的Convolution.backward</a>、<a href="../../reference/affine-backward.html">Affine公式</a>和<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/common/layers.py">作者层实现</a>。</p>
+<h3 id="744-池化reshape一行只放一个通道的窗口">7.4.4 池化reshape：一行只放一个通道的窗口</h3>
+<p><img alt="池化窗口、im2col与reshape" src="../../assets/pooling-reshape-diagram.svg"></p>
+<pre><code class="language-python">col = im2col(x, pool_h, pool_w, stride, pad)
+col = col.reshape(-1, pool_h * pool_w)
+arg_max = np.argmax(col, axis=1)
+out = np.max(col, axis=1)
+out = out.reshape(N, out_h, out_w, C).transpose(0, 3, 1, 2)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>形状</th>
+<th>每行是什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>im2col后</td>
+<td><code>(N*OH*OW,C*PH*PW)</code></td>
+<td>一个位置，所有通道的窗口</td>
+</tr>
+<tr>
+<td>reshape后</td>
+<td><code>(N*OH*OW*C,PH*PW)</code></td>
+<td>一个位置，一个通道的窗口</td>
+</tr>
+<tr>
+<td>max后</td>
+<td><code>(N*OH*OW*C,)</code></td>
+<td>每个窗口的一个最大值</td>
+</tr>
+<tr>
+<td>恢复输出</td>
+<td><code>(N,C,OH,OW)</code></td>
+<td>各样本、各通道的输出特征图</td>
+</tr>
+</tbody>
+</table>
+<p>图中N=1、C=2、输入4×4，窗口2×2、S=2：<code>(4,8) → (8,4) → (8,) → (1,2,2,2)</code>。<code>-1</code>自动推导窗口行数；它不表示“压掉通道”，通道只是被临时并入行数。</p>
+<h3 id="池化反向argmax记录路线">池化反向：argmax记录路线</h3>
+<pre><code class="language-text">前向窗口      [1, 5, 2, 3] → 5，arg_max=1
+上游梯度      2
+窗口内梯度    [0, 2, 0, 0]
+</code></pre>
+<pre><code class="language-python">dout = dout.transpose(0, 2, 3, 1)
+pool_size = self.pool_h * self.pool_w
+dmax = np.zeros((dout.size, pool_size))
+dmax[np.arange(self.arg_max.size), self.arg_max] = dout.flatten()
+dcol = dmax.reshape(dout.shape[0] * dout.shape[1] * dout.shape[2], -1)
+dx = col2im(dcol, self.x.shape,
+            self.pool_h, self.pool_w, self.stride, self.pad)
+</code></pre>
+<p><code>np.arange(...)</code>给出行号，arg_max给出各行的列号；配对索引只在被选中的位置填入梯度。最大值并列时，当前实现采用argmax返回的第一个位置。若池化窗口重叠，汇回输入时同样累加。</p>
+<p>当前Pooling输出尺寸公式没有包含pad，按pad=0使用；网络采用2×2、stride=2。教材位置：<a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf#page=248">7.4.4，书内223页</a>，也可做<a href="../../lessons/0016-pooling-window-reshape.html">池化短课</a>。</p>
+<h2 id="75-simpleconvnet把层组装成网络">7.5 SimpleConvNet：把层组装成网络</h2>
+<h3 id="输出与参数形状总表">输出与参数形状总表</h3>
+<table>
+<thead>
+<tr>
+<th>位置</th>
+<th>输出形状</th>
+<th>参数形状 / 数量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输入</td>
+<td><code>(N,1,28,28)</code></td>
+<td>无</td>
+</tr>
+<tr>
+<td>Conv1 → ReLU1</td>
+<td><code>(N,30,24,24)</code></td>
+<td>W1 <code>(30,1,5,5)</code>，b1 <code>(30,)</code>；780个</td>
+</tr>
+<tr>
+<td>Pool1</td>
+<td><code>(N,30,12,12)</code></td>
+<td>无</td>
+</tr>
+<tr>
+<td>Affine1内部展平</td>
+<td><code>(N,4320)</code></td>
+<td>30×12×12=4320</td>
+</tr>
+<tr>
+<td>Affine1 → ReLU2</td>
+<td><code>(N,100)</code></td>
+<td>W2 <code>(4320,100)</code>，b2 <code>(100,)</code>；432100个</td>
+</tr>
+<tr>
+<td>Affine2</td>
+<td><code>(N,10)</code></td>
+<td>W3 <code>(100,10)</code>，b3 <code>(10,)</code>；1010个</td>
+</tr>
+</tbody>
+</table>
+<p>总参数433890个，其中大部分在Affine1。卷积虽然输出许多空间位置，但同一核共享参数，参数量不乘OH×OW。各组梯度与参数同形。</p>
+<p>Affine前向保存<code>original_x_shape</code>，再展平；反向先算二维dx，再恢复原四维形状，才能传给Pool1。实现见<a href="../../mycode/common/layers.py">common/layers.py</a>。</p>
+<h3 id="三个方法是一条调用链">三个方法是一条调用链</h3>
+<pre><code class="language-text">predict(x)       顺序forward → 分类分数
+loss(x,t)        predict → SoftmaxWithLoss → 标量损失
+gradient(x,t)    loss建立缓存 → 损失层backward(1)
+                → 各层逆序backward → 收集六组参数梯度
+外部训练循环     params[key] -= learning_rate * grads[key]
+</code></pre>
+<p>gradient仍经过没有参数的ReLU和Pooling，否则梯度无法传回Conv1。只有Conv1、Affine1、Affine2提供W和b的梯度。</p>
+<p>层对象和<code>network.params</code>持有同一参数数组，所以原地<code>-=</code>会同步更新层看到的参数；如果只把字典键重新绑定到一个新数组，层可能仍引用旧数组。作者结构可对照<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch07/simple_convnet.py">SimpleConvNet</a>。</p>
+<h3 id="python细节默认字典为什么用none">Python细节：默认字典为什么用None</h3>
+<pre><code class="language-python">def __init__(self, conv_param=None):
+    if conv_param is None:
+        conv_param = {&quot;filter_num&quot;: 30, &quot;filter_size&quot;: 5,
+                      &quot;pad&quot;: 0, &quot;stride&quot;: 1}
+</code></pre>
+<p>可变默认参数在函数定义时只创建一次，可能被多次调用共享。在内部新建字典，让省略参数的每次调用独立。整数和元组等不可变默认值不属于这一问题。</p>
+<h2 id="训练循环一批一次更新一轮">训练循环：一批、一次更新、一轮</h2>
+<h3 id="数据接口">数据接口</h3>
+<pre><code class="language-python">(x_train, t_train), (x_test, t_test) = load_mnist(
+    normalize=True, flatten=False, one_hot_label=True
+)
+</code></pre>
+<p><code>flatten=False</code>保留四维图像；归一化使像素缩放到0—1。当前损失层反向按one-hot实现，所以显式请求one-hot标签。准确率函数沿axis=1分别把分数与one-hot标签转成类别编号，累计正确数，再除以总样本数。</p>
+<h3 id="一轮内部发生什么">一轮内部发生什么</h3>
+<pre><code class="language-text">permutation打乱全部样本编号
+    ↓ 每批使用同一组编号同时取图像与标签
+求梯度 → SGD原地更新 → 记录更新后当前batch损失
+    ↓ 所有批次完成
+分批评价整个训练集、测试集 → 打印这一轮日志
+</code></pre>
+<p>当前每轮遍历一次全部训练样本，不放回地覆盖每个样本。每批求梯度期间固定数据，完成更新后再换下一批。</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>当前循环中的含义</th>
+<th>全量60000张、batch=100</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>iteration</td>
+<td>一个批次求导并更新一次</td>
+<td>1次更新</td>
+</tr>
+<tr>
+<td>epoch</td>
+<td>遍历全部训练样本一次</td>
+<td>600次更新</td>
+</tr>
+<tr>
+<td>当前源码epochs=20</td>
+<td>计划20次完整遍历</td>
+<td>12000次更新（计划）</td>
+</tr>
+</tbody>
+</table>
+<p>重新运行包含<code>network=SimpleConvNet()</code>的训练格会重新初始化，并清空历史列表，不会自动从中断位置续训。第一条日志要等600次更新和训练/测试集评价结束才出现。</p>
+<h3 id="日志指标的含义">日志指标的含义</h3>
+<ul>
+<li><code>train_loss_list</code>：每次更新后、当前批次的损失。</li>
+<li>打印的<code>batch loss</code>：该轮最后一批更新后的损失，<strong>没有对整轮求平均</strong>。各轮最后一批不同，起伏不等于整个网络突然变差。</li>
+<li><code>train_acc_list/test_acc_list</code>：每轮结束、使用同一轮更新后参数评价的全量准确率。</li>
+</ul>
+<h2 id="本次实验保存了17轮随后中断">本次实验：保存了17轮，随后中断</h2>
+<p><img alt="从Notebook保存日志提取的准确率曲线" src="../../assets/chapter7-accuracy.svg"></p>
+<p>数据直接来自Notebook保存输出，未重新运行训练。</p>
+<table>
+<thead>
+<tr>
+<th>保存日志</th>
+<th>batch loss</th>
+<th>train acc</th>
+<th>test acc</th>
+<th>训练−测试差</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第1轮</td>
+<td>0.2299</td>
+<td>91.77%</td>
+<td>91.73%</td>
+<td>0.04个百分点</td>
+</tr>
+<tr>
+<td>第5轮</td>
+<td>0.0340</td>
+<td>98.24%</td>
+<td>97.94%</td>
+<td>0.30个百分点</td>
+</tr>
+<tr>
+<td>第10轮</td>
+<td>0.0078</td>
+<td>99.26%</td>
+<td>98.57%</td>
+<td>0.69个百分点</td>
+</tr>
+<tr>
+<td>第17轮</td>
+<td>0.0019</td>
+<td>99.79%</td>
+<td>98.78%</td>
+<td>1.01个百分点</td>
+</tr>
+</tbody>
+</table>
+<p>前几轮训练与测试准确率都明显提高。后段训练仍提高，测试提升放缓，二者差距扩大。这个趋势值得观察，但不能只凭末批loss或一个评价点判断过拟合，也不能用这一次实验单独解释哪个设计贡献了多少提升。</p>
+<p><strong>运行记录与当前配置分开看：</strong>保存日志写着<code>epoch 1/50</code>至<code>17/50</code>，随后错误类型为<code>KeyboardInterrupt</code>；当前单元格源码是<code>epochs=20</code>，执行计数为null。这里只确认存在17轮完整日志，不推断之后是否重跑或20/50轮已经完成。</p>
+<p>自己的配置为SGD、lr=0.1、batch=100，每轮评价全量60000/10000张图。作者<a href="https://github.com/oreilly-japan/deep-learning-from-scratch/blob/master/ch07/train_convnet.py">训练脚本</a>使用Adam、lr=0.001、20轮，每轮评价1000个样本；优化器和评价开销不同，不要求曲线和耗时一致。</p>
+<h2 id="回查入口与下一步">回查入口与下一步</h2>
+<table>
+<thead>
+<tr>
+<th>卡住的地方</th>
+<th>从哪里看</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CNN为什么还有Affine</td>
+<td><a href="../../lessons/0015-cnn-overview.html">结构短课</a></td>
+</tr>
+<tr>
+<td>池化reshape每行是什么</td>
+<td><a href="../../lessons/0016-pooling-window-reshape.html">池化窗口短课</a></td>
+</tr>
+<tr>
+<td>梯度如何从矩阵传回图像</td>
+<td><a href="../../reference/chapter7.html#convolution-backward">卷积反向速查</a></td>
+</tr>
+<tr>
+<td>epoch与更新次数混淆</td>
+<td><a href="../../lessons/0017-cnn-epoch-updates.html">训练日志短课</a></td>
+</tr>
+</tbody>
+</table>
+<p>可选回忆：输入<code>(2,3,7,7)</code>、核<code>(4,3,5,5)</code>、S=1、P=0时，col、col_W和最终输出各是什么形状？先自己算，再展开核对。</p>
+<details><summary>核对形状</summary><p>OH=OW=3；col=(18,75)，col_W=(75,4)，最终输出=(2,4,3,3)。18=2×3×3，75=3×5×5，输出通道数来自核数4。</p></details>
+
+<p>把自己的思路或没看懂的代码发给我，我们继续拆解。下一节按教材进入7.6「CNN的可视化」；以上练习可按需选择，运行成功不等于已独立掌握推导。</p>
+<h2 id="来源与代码">来源与代码</h2>
+<ul>
+<li><a href="../../materials/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8%EF%BC%9A%E5%9F%BA%E4%BA%8EPython%E7%9A%84%E7%90%86%E8%AE%BA%E4%B8%8E%E5%AE%9E%E7%8E%B0%20%28%E6%96%8B%E8%97%A4%E5%BA%B7%E6%AF%85%29.pdf">本地主教材</a>：第7章7.1—7.5的概念主线。</li>
+<li><a href="../../mycode/chapter7.ipynb">自己的Notebook</a>：本笔记的实现、当前配置和17轮保存输出。</li>
+<li><a href="../../mycode/common/util.py">自己的窗口工具</a>与<a href="../../mycode/common/layers.py">公共层</a>：im2col/col2im和Affine形状恢复。</li>
+<li>上文各节链接到作者对应实现，便于对照；本笔记未推进7.6之后的阅读记录。</li>
+</ul></article>
+<footer class="footer"><a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/notes/%E6%96%8B%E8%97%A4-%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8/07-%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.md">在 GitHub 阅读 Markdown 原文</a>
+ · <a href="../../reference/index.html">返回手边册</a></footer></main></div></body></html>

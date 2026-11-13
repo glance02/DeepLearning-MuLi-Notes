@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第3章：神经网络 · 深度学习手边册</title>
+<link rel="stylesheet" href="../../assets/teach.css">
+<link rel="stylesheet" href="../../assets/site-notes.css">
+<link rel="stylesheet" href="../../assets/code-highlight.css">
+<script src="../../assets/teach.js" defer></script>
+<script src="../../assets/vendor/highlight/highlight.min.js" defer></script>
+<script src="../../assets/code-highlight.js" defer></script>
+<script src="../../assets/site-math.js" defer></script>
+<script src="../../assets/vendor/mathjax/tex-svg-full.js" defer></script></head>
+<body><div class="layout"><aside class="sidebar">
+<a class="brand" href="../../reference/index.html"><small>DEEP LEARNING / NOTES</small>深度学习 · 手边册</a>
+<p class="side-label">斋藤 · 学习笔记</p><nav class="side-links" aria-label="章节导航"><a href="00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.html">《深度学习入门》学习笔记</a><a href="01-Python%E5%85%A5%E9%97%A8.html">第1章：Python入门</a><a href="02-%E6%84%9F%E7%9F%A5%E6%9C%BA.html">第2章：感知机</a><a href="03-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html" aria-current="page">第3章：神经网络</a><a href="04-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%9A%84%E5%AD%A6%E4%B9%A0.html">第4章：神经网络的学习</a><a href="05-%E8%AF%AF%E5%B7%AE%E5%8F%8D%E5%90%91%E4%BC%A0%E6%92%AD%E6%B3%95.html">第5章：误差反向传播法</a><a href="06-%E4%B8%8E%E5%AD%A6%E4%B9%A0%E7%9B%B8%E5%85%B3%E7%9A%84%E6%8A%80%E5%B7%A7.html">第6章：与学习相关的技巧</a><a href="07-%E5%8D%B7%E7%A7%AF%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.html">第7章：卷积神经网络</a></nav>
+<p class="side-label">回查与练习</p><nav class="side-links">
+<a href="../../reference/index.html">公式 · 概念 · 代码</a>
+<a href="../../reference/index.html#review">交互短练习</a></nav>
+<button class="secondary print-button" data-print type="button">打印当前页</button></aside>
+<main class="main reading"><header class="hero"><p class="eyebrow">STUDY NOTES</p><h1>第3章：神经网络</h1>
+<p class="lead">斋藤康毅《深度学习入门》 · 结合自己的代码逐章回顾。</p></header>
+<details class="note-toc"><summary>本页目录</summary><div class="toc">
+<ul>
+<li><a href="#第3章神经网络">第3章：神经网络</a><ul>
+<li><a href="#31神经元的计算">3.1：神经元的计算</a></li>
+<li><a href="#32激活函数">3.2：激活函数</a><ul>
+<li><a href="#隐藏层的非线性激活">隐藏层的非线性激活</a></li>
+</ul>
+</li>
+<li><a href="#33矩阵运算与形状">3.3：矩阵运算与形状</a></li>
+<li><a href="#343层神经网络的前向传播">3.4：3层神经网络的前向传播</a></li>
+<li><a href="#35输出层的设计">3.5：输出层的设计</a><ul>
+<li><a href="#softmax函数">Softmax函数</a></li>
+<li><a href="#softmax的数值稳定性">Softmax的数值稳定性</a></li>
+<li><a href="#分数概率和类别编号">分数、概率和类别编号</a></li>
+</ul>
+</li>
+<li><a href="#36mnist-推理">3.6：MNIST 推理</a><ul>
+<li><a href="#批处理与axis">批处理与axis</a></li>
+<li><a href="#批量softmax的实现">批量Softmax的实现</a></li>
+</ul>
+</li>
+<li><a href="#可选自测">可选自测</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</details>
+<article class="note-content"><span id="第3章神经网络" hidden>第3章：神经网络</span>
+<p><a href="00-%E5%AD%A6%E4%B9%A0%E5%AF%BC%E8%88%AA.html">返回学习导航</a> · <a href="02-%E6%84%9F%E7%9F%A5%E6%9C%BA.html">上一章：感知机</a> · <a href="04-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E7%9A%84%E5%AD%A6%E4%B9%A0.html">下一章：神经网络的学习</a></p>
+<p>教材：3.1—3.7，书内37—79页（PDF 第62—104页）。对应代码：<a href="../../mycode/chapter3.ipynb">chapter3.ipynb</a>，按函数名或单元格注释定位。</p>
+<p>本章解决的问题：给定网络的权重和偏置，怎样把输入一步步变成预测？本章主要是前向传播与推理，参数如何训练放在第4章。</p>
+<h2 id="31神经元的计算">3.1：神经元的计算</h2>
+<p>式（3.4）、（3.5）：</p>
+<div class="arithmatex">\[
+a=b+w_1x_1+w_2x_2,\qquad y=h(a)
+\]</div>
+<p>先算加权和 <code>a</code>，再通过激活函数 <code>h</code> 得到输出。感知机也能这样描述，只是它采用阶跃函数。</p>
+<p>本书把输入层叫第0层，后面依次为隐藏层、输出层。“3层网络”按3组权重计算，不包含输入层。</p>
+<h2 id="32激活函数">3.2：激活函数</h2>
+<p>对应 notebook 开头的 <code>step_function()</code>、<code>sigmoid()</code>、<code>relu()</code>。</p>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>数学表达</th>
+<th>关键性质</th>
+<th>代码</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>阶跃</td>
+<td>输入大于0时为1，否则为0</td>
+<td>输出只有0、1；在0处跳变</td>
+<td><code>np.array(x &gt; 0, dtype=int)</code></td>
+</tr>
+<tr>
+<td>sigmoid，式（3.6）</td>
+<td><span class="arithmatex">\(h(x)=1/(1+e^{-x})\)</span></td>
+<td>平滑；输出在0到1之间；<code>h(0)=0.5</code></td>
+<td><code>1 / (1 + np.exp(-x))</code></td>
+</tr>
+<tr>
+<td>ReLU，式（3.7）</td>
+<td><span class="arithmatex">\(h(x)=\max(0,x)\)</span></td>
+<td>负值置0，正值保留；整体非线性</td>
+<td><code>np.maximum(0, x)</code></td>
+</tr>
+</tbody>
+</table>
+<p>sigmoid 输出在0到1之间，但隐藏层里某个 sigmoid 值不因此自动成为“某类别的概率”；还要看模型如何定义这个输出。</p>
+<h3 id="隐藏层的非线性激活">隐藏层的非线性激活</h3>
+<p>只做线性变换，多层可以合并成一层。例如 <code>h(x) = c*x</code>，连续三次就是 <code>c**3*x</code>。</p>
+<p>即使加偏置，也有：</p>
+<div class="arithmatex">\[
+(XW_1+b_1)W_2+b_2
+=X(W_1W_2)+(b_1W_2+b_2)
+\]</div>
+<p>仍然是一次“矩阵乘法加偏置”。非线性激活让层数增加能够带来新的表达能力。这里说的是隐藏层；输出层可以按任务使用恒等函数。</p>
+<h2 id="33矩阵运算与形状">3.3：矩阵运算与形状</h2>
+<table>
+<thead>
+<tr>
+<th>运算</th>
+<th>含义</th>
+<th>形状要求（本章使用的情形）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>A * B</code></td>
+<td>逐元素相乘</td>
+<td>形状相同或可广播</td>
+</tr>
+<tr>
+<td><code>np.dot(A, B)</code></td>
+<td>二维矩阵乘法</td>
+<td><code>(m, n)</code> 乘 <code>(n, p)</code> 得到 <code>(m, p)</code></td>
+</tr>
+<tr>
+<td><code>np.dot(x, W)</code></td>
+<td>用一个向量计算多个输出</td>
+<td><code>(D,)</code> 乘 <code>(D, H)</code> 得到 <code>(H,)</code></td>
+</tr>
+</tbody>
+</table>
+<p>先核对“中间维度相同”，再看结果的形状。矩阵乘法一般不能交换顺序。</p>
+<p>对于批输入，令X的形状为(N,D)，W为(D,H)，则：</p>
+<div class="arithmatex">\[
+Y=XW,\qquad Y_{nj}=\sum_{i=0}^{D-1}X_{ni}W_{ij}
+\]</div>
+<p>n是样本索引，i是输入特征索引，j是输出索引。代码<code>Y = np.dot(X, W)</code>按每个样本、每个输出对输入特征加权求和；单样本输入省略样本轴，计算规则相同。</p>
+<p>你在“使用 NumPy 矩阵来实现神经网络”单元格中写过：</p>
+<pre><code class="language-python">X = np.array([1, 2])
+W = np.array([[1, 3, 5], [2, 4, 6]])
+Y = np.dot(X, W)  # [5, 11, 17]
+</code></pre>
+<p>例如第一个输出是 <code>1*1 + 2*2 = 5</code>。<code>W</code> 的每一列对应一个输出神经元，列里包含从所有输入连过来的权重。</p>
+<h2 id="343层神经网络的前向传播">3.4：3层神经网络的前向传播</h2>
+<p>式（3.9）的矩阵形式：</p>
+<div class="arithmatex">\[
+A^{(1)}=XW^{(1)}+B^{(1)},\qquad Z^{(1)}=\operatorname{sigmoid}(A^{(1)})
+\]</div>
+<p>对应你的 <code>A1 = np.dot(X, W1) + B1</code>、<code>Z1 = sigmoid(A1)</code>。</p>
+<pre><code class="language-text">输入 X (2,)
+  → 乘 W1 (2,3)，加 b1 (3,) → a1 (3,) → sigmoid → z1 (3,)
+  → 乘 W2 (3,2)，加 b2 (2,) → a2 (2,) → sigmoid → z2 (2,)
+  → 乘 W3 (2,2)，加 b3 (2,) → a3 (2,) → 恒等函数 → y (2,)
+</code></pre>
+<p>权重是每条连接的参数，偏置是每个输出神经元的参数。激活函数逐元素作用，不改变这些数组的形状。</p>
+<p>你的 notebook 用 <code>init_network()</code> 返回保存参数的字典，用 <code>forword(network, x)</code> 执行前向传播；书中函数名拼作 <code>forward</code>，这里按你实际使用的名字对应。这个小网络的输出约为 <code>[0.3168, 0.6963]</code>。</p>
+<p>公式中的上标 <code>(1)</code> 表示第1层，不是乘方。书中单条连接的下标顺序见3.4.1；代码中的矩阵按 <code>X @ W</code> 排布，阅读时先认清输入与输出对应的轴。</p>
+<h2 id="35输出层的设计">3.5：输出层的设计</h2>
+<table>
+<thead>
+<tr>
+<th>任务</th>
+<th>本书给出的典型输出层</th>
+<th>输出怎样理解</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>回归</td>
+<td>恒等函数</td>
+<td>直接输出连续数值</td>
+</tr>
+<tr>
+<td>二元分类</td>
+<td>sigmoid</td>
+<td>用一个输出表示某类的概率</td>
+</tr>
+<tr>
+<td>单标签多类别分类</td>
+<td>softmax</td>
+<td>对各个互斥类别给出概率</td>
+</tr>
+</tbody>
+</table>
+<p>MNIST 有0—9共10类，所以这里输出10个数。</p>
+<h3 id="softmax函数">Softmax函数</h3>
+<p>式（3.10）：</p>
+<div class="arithmatex">\[
+y_k=\frac{e^{a_k}}{\sum_i e^{a_i}}
+\]</div>
+<p>每个输出都受所有输入分数影响，因为它们共享分母。对一个样本，所有类别的输出相加等于1。</p>
+<p>你的 <code>a = np.array([0.3, 2.9, 4.0])</code> 示例得到约 <code>[0.0182, 0.2452, 0.7366]</code>，最大概率对应类别编号2。</p>
+<h3 id="softmax的数值稳定性">Softmax的数值稳定性</h3>
+<p>式（3.11）说明，对一个样本的所有分数加减同一个常数，不改变 softmax 结果。令 <code>c = max(a)</code>：</p>
+<div class="arithmatex">\[
+\frac{e^{a_k-c}}{\sum_i e^{a_i-c}}
+=\frac{e^{-c}e^{a_k}}{e^{-c}\sum_i e^{a_i}}
+=\frac{e^{a_k}}{\sum_i e^{a_i}}
+\]</div>
+<p>减去最大值后，最大的指数输入为0，可以避免大的正数指数造成溢出。你的 <code>softmax(a)</code> 已包含这一处理。</p>
+<h3 id="分数概率和类别编号">分数、概率和类别编号</h3>
+<pre><code class="language-text">原始分数 a         例：[0.3, 2.9, 4.0]
+softmax(a) 的概率  例：[0.0182, 0.2452, 0.7366]
+argmax 的类别编号  例：2
+</code></pre>
+<p>softmax 不改变同一样本内的大小顺序。因此只想预测类别时，可以对原始分数直接取 <code>argmax</code>；如果需要概率或计算这里的交叉熵，则要相应的概率计算。</p>
+<h2 id="36mnist-推理">3.6：MNIST 推理</h2>
+<p>你的代码读取 <code>data/minist.npz</code>。数据集通称是 MNIST；本地文件确实拼作 <code>minist.npz</code>，路径应按实际文件名写。</p>
+<table>
+<thead>
+<tr>
+<th>数据</th>
+<th>原始形状</th>
+<th>展平后</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>训练图像</td>
+<td><code>(60000, 28, 28)</code></td>
+<td><code>(60000, 784)</code></td>
+</tr>
+<tr>
+<td>测试图像</td>
+<td><code>(10000, 28, 28)</code></td>
+<td><code>(10000, 784)</code></td>
+</tr>
+<tr>
+<td>类别编号标签</td>
+<td>训练 <code>(60000,)</code>，测试 <code>(10000,)</code></td>
+<td>不因图像展平而改变</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><code>reshape(-1, 784)</code>：保留总元素数，让 NumPy 推断第一维。</li>
+<li>显示一张图像时，把 <code>(784,)</code> 恢复成 <code>(28, 28)</code>。</li>
+<li><code>get_data()</code> 中的 <code>astype(np.float32) / 255.0</code> 把像素从0—255缩放到0—1，与这里使用的预训练网络输入相匹配。</li>
+<li>后一个 <code>init_network()</code> 读取 <code>sample_weight.pkl</code>，不是重新训练权重；同名函数在 Notebook 里会被后执行的定义覆盖。</li>
+<li>准确率是 <code>预测正确的样本数 / 总样本数</code>。</li>
+</ul>
+<h3 id="批处理与axis">批处理与axis</h3>
+<p>单样本：<code>(784,) → (50,) → (100,) → (10,)</code>。</p>
+<p>一批 <code>N</code> 个样本：<code>(N, 784) → (N, 50) → (N, 100) → (N, 10)</code>。</p>
+<p>对 <code>(N, 10)</code> 的预测结果，每一行是一个样本，每一列是一种类别：</p>
+<pre><code class="language-python">p = np.argmax(y, axis=1)  # 每一行在类别轴上比较，得到 N 个类别编号
+</code></pre>
+<p>你的最后一个 <code>argmax</code> 示例输出 <code>[1, 2, 1, 0]</code>。<code>axis=1</code> 不是“对第1个样本计算”，而是沿数组的第1号轴执行操作。</p>
+<p>设第n个样本的真实类别编号为<span class="arithmatex">\(c_n\)</span>，则预测与准确率可写为：</p>
+<div class="arithmatex">\[
+\hat{c}_n=\operatorname*{argmax}_{k}y_{nk},\qquad
+\operatorname{accuracy}=\frac{1}{N}\sum_{n=0}^{N-1}\mathbf{1}[\hat{c}_n=c_n]
+\]</div>
+<p>指示函数在预测正确时取1，否则取0，对应代码<code>np.mean(p == labels)</code>。这里<code>labels</code>是一维真实类别编号数组。</p>
+<h3 id="批量softmax的实现">批量Softmax的实现</h3>
+<p>对形状(N,K)的得分数组a，应分别对每行的K个类别归一化。令<span class="arithmatex">\(m_n\)</span>为第n行得分的最大值：</p>
+<div class="arithmatex">\[
+p_{nk}=\frac{\exp(a_{nk}-m_n)}{\sum_{j=0}^{K-1}\exp(a_{nj}-m_n)},\qquad
+m_n=\max_j a_{nj}
+\]</div>
+<p>每个样本只减去自己这一行的最大值。代码用<code>keepdims=True</code>保留每行统计量的列轴，便于广播：</p>
+<pre><code class="language-python">shifted = a - np.max(a, axis=1, keepdims=True)
+exp_a = np.exp(shifted)
+p = exp_a / np.sum(exp_a, axis=1, keepdims=True)
+</code></pre>
+<p>你在本 notebook 定义的 <code>softmax(a)</code> 使用不带 <code>axis</code> 的 <code>np.max</code> 和 <code>np.sum</code>，适合这里的一维输入；直接传入二维批数据时，会按整个数组归一化。</p>
+<p>例如两行分数都是 <code>[0, 0]</code>，整批归一化会得到每项 <code>0.25</code>，而逐样本的概率应该每行都是 <code>[0.5, 0.5]</code>。只检查总和为1或分类准确率，可能看不出这个区别。</p>
+<p>批处理时应检查：</p>
+<pre><code class="language-python">y.sum(axis=1)  # 每一行应约等于1
+</code></pre>
+<p>你已有的 <a href="../../mycode/common/functions.py">common/functions.py</a> 按 <code>axis=-1</code>、<code>keepdims=True</code> 处理，支持一维和二维输入。这是代码观察，本次只记入笔记，未改 notebook。</p>
+<h2 id="可选自测">可选自测</h2>
+<ol>
+<li>输入形状 <code>(8, 784)</code>，第一层权重形状 <code>(784, 50)</code>，加偏置后的形状是什么？</li>
+<li>为什么隐藏层全用恒等函数时，多层可以合并成一层？</li>
+<li>两个样本的输出组成 <code>(2, 10)</code> 数组，应该沿哪个轴取 <code>argmax</code>，应该沿哪个轴检查概率和？</li>
+</ol>
+<details>
+<summary>回忆后展开参考答案</summary>
+
+1. `(8, 50)`，偏置 `(50,)` 广播到每一行。
+2. 连续的矩阵乘法及偏置可以合成为一组权重和一个偏置，中间没有引入非线性。
+3. 都沿 `axis=1`；得到两个类别编号，以及两个约等于1的行和。
+
+</details></article>
+<footer class="footer"><a href="https://github.com/glance02/DeepLearning-MuLi-Notes/blob/main/notes/%E6%96%8B%E8%97%A4-%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E5%85%A5%E9%97%A8/03-%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C.md">在 GitHub 阅读 Markdown 原文</a>
+ · <a href="../../reference/index.html">返回手边册</a></footer></main></div></body></html>
